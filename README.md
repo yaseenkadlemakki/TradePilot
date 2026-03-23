@@ -1,22 +1,22 @@
 # TradePilot
 
-AI-powered stock options recommendation engine that produces exactly **4 daily trades** â one Long Call, one Long Put, one Short Call, and one Sell Put â by running market data, sentiment, and options flow through a 5-agent pipeline.
+AI-powered stock options recommendation engine that produces exactly **4 daily trades** -- one Long Call, one Long Put, one Short Call, and one Sell Put -- by running market data, sentiment, and options flow through a 5-agent pipeline.
 
 ## How It Works
 
 Five specialized agents run sequentially, each feeding its output to the next:
 
 ```
-DataAggregator â SentimentIntelligence â QuantStrategy â RiskCompliance â ExpertAdvisor
-     â                    â                    â               â               â
-  50 tickers      Sentiment Report      4 Trade Proposals  Validated      4 Final Picks
+DataAggregator -> SentimentIntelligence -> QuantStrategy -> RiskCompliance -> ExpertAdvisor
+      |                     |                    |               |               |
+  50 tickers       Sentiment Report      4 Trade Proposals  Validated      4 Final Picks
 ```
 
-1. **DataAggregator** â Collects market prices, options flow, Reddit posts, and news articles from 4 ingestors. Extracts tickers, computes 15-feature vectors, and surfaces the top 50 candidates. *(timeout: 180 min)*
-2. **SentimentIntelligence** â Scores each candidate on sentiment, momentum, conviction, and source diversity using a keyword-based scorer with optional Claude LLM deep analysis for the top 25. *(timeout: 15 min)*
-3. **QuantStrategy** â Selects the best candidate per strategy type, calculates Greeks and risk/reward, and emits exactly 4 `TradeProposal` objects with composite scoring. *(timeout: 10 min)*
-4. **RiskCompliance** â Validates proposals against hard limits (volume, open interest, bid-ask spread, IV, pump detection) and flags soft warnings. Rejected slots loop back to QuantStrategy for replacement (up to 3 retries). *(timeout: 10 min)*
-5. **ExpertAdvisor** â Final coherence review: detects market regime, checks sector concentration, refines rationales, and produces the `DailyRecommendations` payload. *(timeout: 5 min)*
+1. **DataAggregator** -- Collects market prices, options flow, Reddit posts, and news articles from 4 ingestors. Extracts tickers, computes 15-feature vectors, and surfaces the top 50 candidates. *(timeout: 180 min)*
+2. **SentimentIntelligence** -- Scores each candidate on sentiment, momentum, conviction, and source diversity using a keyword-based scorer with optional Claude LLM deep analysis for the top 25. *(timeout: 15 min)*
+3. **QuantStrategy** -- Selects the best candidate per strategy type, calculates Greeks and risk/reward, and emits exactly 4 `TradeProposal` objects with composite scoring. *(timeout: 10 min)*
+4. **RiskCompliance** -- Validates proposals against hard limits (volume, open interest, bid-ask spread, IV, pump detection) and flags soft warnings. Rejected slots loop back to QuantStrategy for replacement (up to 3 retries). *(timeout: 10 min)*
+5. **ExpertAdvisor** -- Final coherence review: detects market regime, checks sector concentration, refines rationales, and produces the `DailyRecommendations` payload. *(timeout: 5 min)*
 
 ## Quick Start
 
@@ -45,7 +45,7 @@ cd .. && python -m pytest tests/ -v
 | `/api/v1/recommendations/today` | GET | Today's 4 recommendations |
 | `/api/v1/recommendations/{date}` | GET | Recommendations by date (YYYY-MM-DD) |
 | `/api/v1/recommendations/detail/{id}` | GET | Full details for a single recommendation |
-| `/api/v1/recommendations/history` | GET | Historical recommendations (1â90 days, optional strategy filter) |
+| `/api/v1/recommendations/history` | GET | Historical recommendations (1-90 days, optional strategy filter) |
 | `/api/v1/recommendations/performance` | GET | Aggregate performance metrics |
 | `/api/v1/recommendations/trigger` | POST | Manually trigger the pipeline |
 
@@ -62,37 +62,37 @@ cd .. && python -m pytest tests/ -v
 
 ```
 tradepilot-backend/
-âââ agents/              # 5 AI agents + DAG orchestrator with retry loops
-â   âââ base.py          # Generic BaseAgent[InputT, OutputT] with timeout
-â   âââ data_aggregator.py
-â   âââ sentiment_intelligence.py
-â   âââ quant_strategy.py
-â   âââ risk_compliance.py
-â   âââ expert_advisor.py
-â   âââ orchestrator.py
-âââ api/
-â   âââ main.py          # FastAPI app with CORS + lifespan
-â   âââ routes/          # health.py, recommendations.py
-â   âââ schemas/         # recommendation.py â all Pydantic models
-âââ config/
-â   âââ settings.py      # Pydantic Settings (env-driven)
-â   âââ constants.py     # Enums, scoring weights, risk thresholds
-âââ data_pipelines/
-â   âââ ingestors/       # market_data, options_flow, reddit_scraper, news_feed
-â   âââ processors/      # ticker_extractor, sentiment_scorer, feature_engineer
-âââ models/              # Placeholder dirs for FinBERT, pump_detector, strategy
-âââ services/            # recommendation_service.py â business logic layer
+|-- agents/              # 5 AI agents + DAG orchestrator with retry loops
+|   |-- base.py          # Generic BaseAgent[InputT, OutputT] with timeout
+|   |-- data_aggregator.py
+|   |-- sentiment_intelligence.py
+|   |-- quant_strategy.py
+|   |-- risk_compliance.py
+|   |-- expert_advisor.py
+|   +-- orchestrator.py
+|-- api/
+|   |-- main.py          # FastAPI app with CORS + lifespan
+|   |-- routes/          # health.py, recommendations.py
+|   +-- schemas/         # recommendation.py -- all Pydantic models
+|-- config/
+|   |-- settings.py      # Pydantic Settings (env-driven)
+|   +-- constants.py     # Enums, scoring weights, risk thresholds
+|-- data_pipelines/
+|   |-- ingestors/       # market_data, options_flow, reddit_scraper, news_feed
+|   +-- processors/      # ticker_extractor, sentiment_scorer, feature_engineer
+|-- models/              # Placeholder dirs for FinBERT, pump_detector, strategy
++-- services/            # recommendation_service.py -- business logic layer
 tests/
-âââ unit/                # 56 tests across 5 files
-âââ integration/         # 11 tests across 2 files
-âââ conftest.py          # Shared fixtures (events, features, sentiment reports)
+|-- unit/                # 56 tests across 5 files
+|-- integration/         # 11 tests across 2 files
++-- conftest.py          # Shared fixtures (events, features, sentiment reports)
 ```
 
 ## Tech Stack
 
 **Runtime:** Python 3.11+, FastAPI, Pydantic v2, uvicorn
 
-**AI/ML:** Anthropic Claude API (deep sentiment + coherence review), HuggingFace Transformers + PyTorch (FinBERT â scaffolded, not yet wired), scikit-learn, NumPy, pandas
+**AI/ML:** Anthropic Claude API (deep sentiment + coherence review), HuggingFace Transformers + PyTorch (FinBERT -- scaffolded, not yet wired), scikit-learn, NumPy, pandas
 
 **Data infrastructure (configured, in-memory fallbacks for local dev):** TimescaleDB (asyncpg), MongoDB (motor), Redis (hiredis), Kafka (aiokafka)
 
@@ -106,11 +106,11 @@ tests/
 
 See `.env.example` for the full list. At minimum you need:
 
-- `POLYGON_API_KEY` â market data and options chains
-- `UNUSUAL_WHALES_API_KEY` â options flow
-- `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` â Reddit sentiment
-- `NEWS_API_KEY` â news articles
-- `ANTHROPIC_API_KEY` â Claude LLM for deep analysis (optional; keyword scorer works without it)
+- `POLYGON_API_KEY` -- market data and options chains
+- `UNUSUAL_WHALES_API_KEY` -- options flow
+- `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` -- Reddit sentiment
+- `NEWS_API_KEY` -- news articles
+- `ANTHROPIC_API_KEY` -- Claude LLM for deep analysis (optional; keyword scorer works without it)
 
 ## Current Status
 
