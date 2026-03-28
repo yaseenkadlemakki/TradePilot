@@ -5,7 +5,9 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen)
 
-AI-powered stock options recommendation engine that produces exactly **4 daily trades** — one Long Call, one Long Put, one Short Call, and one Short Put — by running market data, sentiment analysis, and options flow through a 5-agent pipeline.
+**TradePilot** is an open-source options recommendation engine. It produces exactly **4 daily trade ideas** — one Long Call, one Long Put, one Short Call, and one Short Put — by running market data, sentiment analysis, and options flow through a 5-agent AI pipeline.
+
+The backend can be self-hosted, or the entire pipeline can run on-device via the **TradePilot iOS app** (coming soon). All API keys are yours — TradePilot never proxies your data.
 
 ---
 
@@ -27,66 +29,17 @@ DataAggregator → SentimentIntelligence → QuantStrategy → RiskCompliance �
 
 ---
 
-## Features
+## BYO Keys
 
-- **4 daily trade recommendations** across Long Call, Long Put, Short Call, and Short Put strategies
-- **Multi-source data ingestion** — market prices, unusual options flow, Reddit sentiment, and financial news
-- **5-agent AI pipeline** with sequential data passing and automatic retry loops
-- **Risk validation** with hard limits on volume, open interest, bid-ask spread, IV, and pump detection
-- **Claude LLM integration** for deep sentiment analysis and final coherence review
-- **REST API** with full history, performance metrics, and manual pipeline trigger
-- **Scheduled execution** via APScheduler for daily automated runs
-- **67 tests** — 56 unit + 11 integration
+TradePilot follows a **Bring Your Own Keys** model. You supply API credentials for the data sources you want; the pipeline degrades gracefully for any that are absent.
 
----
-
-## Tech Stack
-
-| Layer | Technologies |
-|---|---|
-| **Runtime** | Python 3.11+, FastAPI, Pydantic v2, uvicorn |
-| **AI / ML** | Anthropic Claude API, HuggingFace Transformers + PyTorch (FinBERT), scikit-learn, NumPy, pandas |
-| **Data Sources** | Polygon.io, Unusual Whales, Reddit API, NewsAPI |
-| **Storage** | TimescaleDB (asyncpg), MongoDB (motor), Redis (hiredis) |
-| **Streaming** | Kafka (aiokafka) |
-| **Scheduling** | APScheduler |
-| **Testing** | pytest, pytest-asyncio, pytest-cov, pytest-mock |
-
----
-
-## Installation & Setup
-
-### Prerequisites
-
-- Python 3.11+
-- API keys for your desired data sources (see [Required API Keys](#required-api-keys))
-
-### Steps
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/yaseenkadlemakki/TradePilot.git
-cd TradePilot/tradepilot-backend
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Configure environment variables
-cp ../.env.example .env
-# Open .env and fill in your API keys
-```
-
-### Required API Keys
-
-See `.env.example` for the full list. At minimum you need:
-
-| Variable | Provider | Required? |
+| Variable | Provider | What it unlocks |
 |---|---|---|
-| `POLYGON_API_KEY` | [Polygon.io](https://polygon.io) | Yes — market data & options chains |
-| `UNUSUAL_WHALES_API_KEY` | [Unusual Whales](https://unusualwhales.com) | Yes — options flow |
-| `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` | [Reddit API](https://www.reddit.com/prefs/apps) | Yes — Reddit sentiment |
-| `NEWS_API_KEY` | [NewsAPI](https://newsapi.org) | Yes — news articles |
-| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | Optional — keyword scorer works without it |
+| `POLYGON_API_KEY` | [Polygon.io](https://polygon.io) | Market prices, options chains, Greeks, IV |
+| `UNUSUAL_WHALES_API_KEY` | [Unusual Whales](https://unusualwhales.com) | Unusual flow, sweeps, premium |
+| `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` | [Reddit API](https://www.reddit.com/prefs/apps) | r/wallstreetbets, r/options, r/stocks, r/investing |
+| `NEWS_API_KEY` | [NewsAPI](https://newsapi.org) | Financial headlines and full-text articles |
+| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | Optional — LLM deep analysis; keyword scorer works without it |
 
 Optional infrastructure (in-memory fallbacks used locally):
 
@@ -100,7 +53,31 @@ JWT_SECRET=change-me-to-a-long-random-string
 
 ---
 
-## Usage
+## Installation & Setup
+
+### Prerequisites
+
+- Python 3.11+
+- API keys for the data sources you want (see [BYO Keys](#byo-keys) above)
+
+### Steps
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yaseenkadlemakki/TradePilot.git
+cd TradePilot/tradepilot-backend
+
+# 2. Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Configure environment variables
+cp ../.env.example .env
+# Edit .env and fill in your API keys
+```
 
 ### Start the API server
 
@@ -115,10 +92,13 @@ The server starts on `http://localhost:8000`.
 
 ```bash
 # From the repo root
+source .venv/bin/activate
 python -m pytest tests/ -v
 ```
 
-### API Endpoints
+---
+
+## API Endpoints
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -135,7 +115,7 @@ python -m pytest tests/ -v
 
 ## Data Sources
 
-| Source | Provider | Priority | What It Feeds |
+| Source | Provider | Priority | What it feeds |
 |---|---|---|---|
 | Market prices + options chains | Polygon.io | 1 (highest) | OHLCV bars, Greeks, IV, bid/ask |
 | Unusual options activity | Unusual Whales | 2 | Premium, sentiment, sweep detection |
@@ -144,13 +124,27 @@ python -m pytest tests/ -v
 
 ---
 
+## Tech Stack
+
+| Layer | Technologies |
+|---|---|
+| **Runtime** | Python 3.11+, FastAPI, Pydantic v2, uvicorn |
+| **AI / ML** | Anthropic Claude API (optional), FinBERT (scaffolded), scikit-learn, NumPy, pandas |
+| **Logging** | structlog (structured JSON logging) |
+| **Data Sources** | Polygon.io, Unusual Whales, Reddit API, NewsAPI |
+| **Storage** | TimescaleDB (asyncpg), MongoDB (motor), Redis (hiredis) |
+| **Streaming** | Kafka (aiokafka) |
+| **Testing** | pytest, pytest-asyncio, pytest-cov, pytest-mock |
+
+---
+
 ## Project Structure
 
 ```
 TradePilot/
 ├── tradepilot-backend/
-│   ├── agents/              # 5 AI agents + DAG orchestrator with retry loops
-│   │   ├── base.py          # Generic BaseAgent[InputT, OutputT] with timeout
+│   ├── agents/              # 5 AI agents + DAG orchestrator
+│   │   ├── base.py          # BaseAgent[InputT, OutputT] with timeout + AgentError
 │   │   ├── data_aggregator.py
 │   │   ├── sentiment_intelligence.py
 │   │   ├── quant_strategy.py
@@ -165,14 +159,14 @@ TradePilot/
 │   │   ├── settings.py      # Pydantic Settings (env-driven)
 │   │   └── constants.py     # Enums, scoring weights, risk thresholds
 │   ├── data_pipelines/
-│   │   ├── ingestors/       # market_data, options_flow, reddit_scraper, news_feed
+│   │   ├── ingestors/       # BaseIngestor + market_data, options_flow, reddit_scraper, news_feed
 │   │   └── processors/      # ticker_extractor, sentiment_scorer, feature_engineer
-│   ├── models/              # Placeholder dirs for FinBERT, pump_detector, strategy
+│   ├── models/              # pump_detector (implemented), FinBERT + strategy (scaffolded)
 │   └── services/            # recommendation_service.py — business logic layer
 ├── tests/
 │   ├── unit/                # 56 tests across 5 files
 │   ├── integration/         # 11 tests across 2 files
-│   └── conftest.py          # Shared fixtures (events, features, sentiment reports)
+│   └── conftest.py
 └── .env.example
 ```
 
@@ -180,15 +174,35 @@ TradePilot/
 
 ## Current Status
 
-This is a working backend with full agent orchestration, risk validation, and API serving. A few components are scaffolded for production but use development fallbacks locally:
+The core pipeline (QuantStrategy + Orchestrator), API layer, and all processors are fully implemented. Several components are scaffolded for production:
 
 | Component | Status |
 |---|---|
-| Storage | Recommendations held in-memory; production config points to TimescaleDB + MongoDB |
-| Caching | Redis configured but not yet wired in the service layer |
-| Streaming | Kafka topics defined in constants; event bus not yet active |
-| FinBERT | Model directory exists as placeholder; sentiment currently uses keyword-based scorer |
-| StockTwits | Defined as a data source enum; no ingestor implemented yet |
+| QuantStrategyAgent | Implemented — generates 4 proposals per run |
+| PipelineOrchestrator | Implemented — wires agents, measures duration |
+| TickerExtractor, SentimentScorer, FeatureEngineer | Implemented |
+| PumpDetector | Implemented (rule-based) |
+| DataAggregatorAgent | Scaffolded — ingestors not yet wired |
+| SentimentIntelligenceAgent | Scaffolded — LLM integration pending |
+| RiskComplianceAgent | Scaffolded — validation logic pending |
+| ExpertAdvisorAgent | Scaffolded — coherence review pending |
+| Ingestors (Polygon, Unusual Whales, Reddit, NewsAPI) | Scaffolded — API clients pending |
+| Storage | In-memory; production config points to TimescaleDB + MongoDB |
+| Caching | Redis configured but not yet wired |
+| Streaming | Kafka topics defined; event bus not yet active |
+| FinBERT | Placeholder directory; using keyword scorer |
+
+---
+
+## Roadmap
+
+- [ ] Wire Polygon.io, Unusual Whales, Reddit, and NewsAPI ingestors
+- [ ] Implement full DataAggregator pipeline
+- [ ] Integrate FinBERT for sentence-level sentiment
+- [ ] Complete RiskCompliance validation and retry loop
+- [ ] ExpertAdvisor with Claude LLM coherence review
+- [ ] Persistent storage (TimescaleDB + MongoDB)
+- [ ] **TradePilot iOS app** — on-device pipeline with local inference, zero-server deployment, BYO keys stored in iOS Keychain
 
 ---
 

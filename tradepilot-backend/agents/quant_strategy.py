@@ -6,10 +6,13 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
+import structlog
 from config.constants import StrategyType
 from data_pipelines.processors.feature_engineer import CandidateFeatures
 
 from agents.base import BaseAgent
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -38,10 +41,18 @@ class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
         if not candidates:
             raise ValueError("No candidates supplied to QuantStrategyAgent")
 
-        proposals = [
-            self._build_proposal(strategy, candidates, run_date)
-            for strategy in self.STRATEGY_TYPES
-        ]
+        self._log.info("quant_strategy.selecting", candidate_count=len(candidates), run_date=run_date.isoformat())
+
+        try:
+            proposals = [
+                self._build_proposal(strategy, candidates, run_date)
+                for strategy in self.STRATEGY_TYPES
+            ]
+        except Exception as exc:
+            self._log.error("quant_strategy.build_failed", error=str(exc))
+            raise
+
+        self._log.info("quant_strategy.proposals_built", proposal_count=len(proposals))
         return StrategyOutput(proposals=proposals)
 
     # ------------------------------------------------------------------
