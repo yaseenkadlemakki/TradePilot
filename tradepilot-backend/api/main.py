@@ -1,3 +1,5 @@
+"""FastAPI application factory for TradePilot."""
+
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -10,12 +12,26 @@ from api.routes.recommendations import router as rec_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage application startup and shutdown lifecycle events.
+
+    Args:
+        app: The FastAPI application instance.
+
+    Yields:
+        Control to FastAPI during the application's running phase.
+    """
     # startup
     yield
     # shutdown
 
 
 def create_app() -> FastAPI:
+    """Construct and configure the FastAPI application.
+
+    Returns:
+        A fully configured ``FastAPI`` instance with CORS middleware and
+        all routers registered.
+    """
     app = FastAPI(
         title="TradePilot",
         version="0.1.0",

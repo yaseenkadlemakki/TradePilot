@@ -14,24 +14,50 @@ from agents.base import BaseAgent
 
 @dataclass
 class StrategyInput:
+    """Input payload for ``QuantStrategyAgent``."""
+
     candidates: list[CandidateFeatures]
     run_date: date | None = None
 
 
 @dataclass
 class StrategyOutput:
+    """Output payload from ``QuantStrategyAgent``."""
+
     proposals: list[dict[str, Any]]
 
 
 class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
-    """Select the best candidate per strategy type and compute risk metrics."""
+    """Select the best candidate per strategy type and compute risk metrics.
+
+    Produces one trade proposal for each ``StrategyType`` (long call, long put,
+    short call, short put), choosing the highest- or lowest-scoring candidate
+    depending on bullish/bearish bias.
+    """
 
     STRATEGY_TYPES = list(StrategyType)
 
     def __init__(self, timeout_seconds: float = 600.0) -> None:
+        """Initialise the agent with an optional execution timeout.
+
+        Args:
+            timeout_seconds: Maximum wall-clock seconds before the run is
+                cancelled with ``asyncio.TimeoutError``.
+        """
         super().__init__(name="QuantStrategy", timeout_seconds=timeout_seconds)
 
     async def _run(self, input_data: StrategyInput) -> StrategyOutput:
+        """Build one trade proposal per strategy type from *input_data*.
+
+        Args:
+            input_data: Candidates and an optional run date.
+
+        Returns:
+            ``StrategyOutput`` containing a list of serialisable proposal dicts.
+
+        Raises:
+            ValueError: If no candidates are supplied.
+        """
         candidates = input_data.candidates
         run_date = input_data.run_date or date.today()
 
@@ -54,6 +80,16 @@ class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
         candidates: list[CandidateFeatures],
         run_date: date,
     ) -> dict[str, Any]:
+        """Construct a single trade proposal dict for the given strategy.
+
+        Args:
+            strategy: The option strategy type.
+            candidates: All available enriched feature vectors.
+            run_date: The date the pipeline is running; used to compute expiry.
+
+        Returns:
+            A serialisable dict suitable for the recommendations API response.
+        """
         candidate = self._select_candidate(strategy, candidates)
         expiry = run_date + timedelta(days=30)
         entry = max(candidate.price * 0.02, 0.50)  # rough option premium
@@ -88,7 +124,15 @@ class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
     def _select_candidate(
         strategy: StrategyType, candidates: list[CandidateFeatures]
     ) -> CandidateFeatures:
-        """Pick the highest-scoring candidate for the given strategy type."""
+        """Pick the highest-scoring candidate for the given strategy type.
+
+        Args:
+            strategy: The option strategy being evaluated.
+            candidates: Pool of enriched feature vectors to choose from.
+
+        Returns:
+            The best-fit ``CandidateFeatures`` for *strategy*.
+        """
         if strategy in (StrategyType.LONG_CALL, StrategyType.SHORT_PUT):
             # Bullish bias → highest composite score
             return max(candidates, key=lambda c: c.composite_score)
@@ -97,6 +141,14 @@ class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
 
     @staticmethod
     def _strike_multiplier(strategy: StrategyType) -> float:
+        """Return the strike price multiplier for a given strategy type.
+
+        Args:
+            strategy: The option strategy type.
+
+        Returns:
+            A float multiplied against the underlying price to derive the strike.
+        """
         return {
             StrategyType.LONG_CALL: 1.05,
             StrategyType.SHORT_CALL: 1.10,

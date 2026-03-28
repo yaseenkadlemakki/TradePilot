@@ -1,3 +1,5 @@
+"""Feature engineering utilities for ticker candidates."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -5,6 +7,8 @@ from dataclasses import dataclass, field
 
 @dataclass
 class CandidateFeatures:
+    """All features required to score and rank a single ticker candidate."""
+
     ticker: str
     # Price features
     price: float = 0.0
@@ -43,6 +47,14 @@ class FeatureEngineer:
         options_flow_weight: float = 0.25,
         technical_weight: float = 0.20,
     ) -> None:
+        """Initialise the feature engineer with scoring component weights.
+
+        Args:
+            sentiment_weight: Weight applied to the sentiment sub-score (default 0.30).
+            momentum_weight: Weight applied to the momentum sub-score (default 0.25).
+            options_flow_weight: Weight applied to the options-flow sub-score (default 0.25).
+            technical_weight: Weight applied to the technical sub-score (default 0.20).
+        """
         self._w = {
             "sentiment": sentiment_weight,
             "momentum": momentum_weight,
