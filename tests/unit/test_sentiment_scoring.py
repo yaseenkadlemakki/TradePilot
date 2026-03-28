@@ -1,7 +1,6 @@
-"""Unit tests for SentimentScorer — 14 tests."""
+"""Unit tests for SentimentScorer — 16 tests."""
 
 import pytest
-
 from data_pipelines.processors.sentiment_scorer import SentimentScorer
 
 
@@ -94,3 +93,13 @@ def test_conviction_score_range(scorer: SentimentScorer) -> None:
 # 14
 def test_conviction_score_empty(scorer: SentimentScorer) -> None:
     assert scorer.conviction_score("") == 0.0
+
+
+# 15 — whitespace-only string: tokenize returns [] → score() line 28 branch
+def test_score_whitespace_only_returns_zero(scorer: SentimentScorer) -> None:
+    assert scorer.score("   \t\n  ") == 0.0
+
+
+# 16 — whitespace-only string: tokenize returns [] → conviction_score() line 51 branch
+def test_conviction_score_whitespace_only_returns_zero(scorer: SentimentScorer) -> None:
+    assert scorer.conviction_score("   \t\n  ") == 0.0
