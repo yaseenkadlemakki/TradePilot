@@ -1,1 +1,35 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
 
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+strict = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tradepilot-backend"]
+asyncio_mode = "auto"
+addopts = "--tb=short"
+
+[tool.coverage.run]
+source = ["tradepilot-backend"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "tradepilot-backend/config/settings.py",
+    "tradepilot-backend/api/schemas/recommendation.py",
+    "tradepilot-backend/api/routes/recommendations.py",
+    "tradepilot-backend/services/recommendation_service.py",
+    "tradepilot-backend/data_pipelines/ingestors/*",
+    "tradepilot-backend/data_pipelines/processors/feature_engineer.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
