@@ -2,7 +2,7 @@ import Foundation
 
 /// Step 2 — Refines raw sentiment using time-decay weighting and source tier multipliers.
 /// Matches the Python SentimentScorer formula exactly.
-/// Raw text inference is delegated to `SentimentModelManager` for easy Core ML swap-in.
+/// Delegates per-text scoring to SentimentModelManager (ready for Core ML swap-in).
 struct SentimentScorer {
     // Source tier multipliers (higher = more trusted)
     private static let tierWeights: [String: Double] = [
@@ -39,7 +39,7 @@ struct SentimentScorer {
             let decayFactor = pow(0.5, ageHours / Self.halfLifeHours)
             let weight      = tierWeight * decayFactor
 
-            let raw = modelManager.rawScore(text: item.text.lowercased())
+            let raw = modelManager.scoreSentiment(text: item.text)
             weightedSum += raw * weight
             totalWeight += weight
         }

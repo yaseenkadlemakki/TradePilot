@@ -78,8 +78,8 @@ actor PipelineOrchestrator {
             throw PipelineError.allSlotsRejected
         }
 
-        // Step 4 — Expert review
-        let review = advisor.review(selected)
+        // Step 4 — Expert review (async: may call LLM provider)
+        let review = await advisor.review(selected)
         return review
     }
 

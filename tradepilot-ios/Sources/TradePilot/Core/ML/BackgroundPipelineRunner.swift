@@ -1,124 +1,156 @@
 import Foundation
 import BackgroundTasks
+#if canImport(UserNotifications)
 import UserNotifications
+#endif
 
-/// Schedules and handles daily 6 AM ET pipeline runs via `BGTaskScheduler`.
-/// Register early in `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
+// MARK: - Background Pipeline Runner
+
+/// Registers and handles BGProcessingTask for daily pre-market pipeline runs.
 ///
-/// Thread-safety note: `@unchecked Sendable` is used because this is a singleton accessed via
-/// `BackgroundPipelineRunner.shared` and all mutable state mutations are serialized through
-/// `BGTaskScheduler` callbacks which are delivered on the main thread.
-final class BackgroundPipelineRunner: @unchecked Sendable {
-    static let shared = BackgroundPipelineRunner()
-    static let taskIdentifier = "com.tradepilot.pipeline.daily"
+/// Schedule: 6:00 AM Eastern Time on trading days (Mon–Fri, non-holiday).
+/// On completion, saves results to LocalCache and posts a local notification.
+final class BackgroundPipelineRunner {
 
-    private init() {}
+    static let taskIdentifier = "com.tradepilot.dailypipeline"
+
+    // MARK: - US Market Holidays (static list, update annually)
+
+    /// Federal/NYSE holidays for 2025–2026 where markets are closed.
+    private static let marketHolidays: Set<String> = [
+        // 2025
+        "2025-01-01", "2025-01-20", "2025-02-17", "2025-04-18",
+        "2025-05-26", "2025-06-19", "2025-07-04", "2025-09-01",
+        "2025-11-27", "2025-12-25",
+        // 2026
+        "2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03",
+        "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07",
+        "2026-11-26", "2026-12-25"
+    ]
+
+    private static let isoDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "America/New_York")!
+        return f
+    }()
 
     // MARK: - Registration
 
-    /// Register the background task handler. Must be called before the app finishes launching.
+    /// Call from `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
     func registerBackgroundTask() {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.taskIdentifier,
             using: nil
         ) { [weak self] task in
-            guard let processingTask = task as? BGProcessingTask else {
-                task.setTaskCompleted(success: false)
-                return
-            }
-            self?.handlePipelineTask(processingTask)
+            guard let processingTask = task as? BGProcessingTask else { return }
+            self?.handleBackgroundTask(processingTask)
         }
     }
 
     // MARK: - Scheduling
 
-    /// Schedule (or reschedule) the next daily run at 6 AM Eastern Time.
+    /// Schedule the next pipeline run for 6:00 AM ET on the next trading day.
     func scheduleNextRun() {
         let request = BGProcessingTaskRequest(identifier: Self.taskIdentifier)
         request.requiresNetworkConnectivity = true
-        request.requiresExternalPower       = false
-        request.earliestBeginDate           = nextSixAMEastern()
+        request.requiresExternalPower = false
+        request.earliestBeginDate = nextTradingDayAt6AM()
 
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            print("BackgroundPipelineRunner: failed to schedule task — \(error.localizedDescription)")
+            // Non-fatal: app will still run pipeline on foreground launch
+            print("[BackgroundPipelineRunner] Failed to schedule: \(error)")
         }
     }
 
-    // MARK: - Task handler
+    // MARK: - Task handling
 
-    private func handlePipelineTask(_ task: BGProcessingTask) {
-        // Reschedule before starting so the next run is always queued.
+    func handleBackgroundTask(_ task: BGProcessingTask) {
+        // Schedule next run immediately so the chain continues
         scheduleNextRun()
 
-        let orchestrator = PipelineOrchestrator()
-        let work = Task {
+        let pipelineTask = Task {
             do {
+                let orchestrator = PipelineOrchestrator()
                 let review = try await orchestrator.run()
-                await deliverNotification(for: review)
+                postPipelineCompleteNotification(candidateCount: review.finalCandidates.count)
             } catch {
-                await deliverErrorNotification(error: error)
+                print("[BackgroundPipelineRunner] Pipeline error: \(error)")
             }
-            task.setTaskCompleted(success: true)
         }
 
         task.expirationHandler = {
-            work.cancel()
+            pipelineTask.cancel()
             task.setTaskCompleted(success: false)
         }
-    }
 
-    // MARK: - Local notifications
-
-    @MainActor
-    private func deliverNotification(for review: AdvisorReview) async {
-        let content = UNMutableNotificationContent()
-        content.title = "TradePilot — Daily Report Ready"
-        let count = review.finalCandidates.count
-        let warningNote = review.warnings.isEmpty ? "" : " (\(review.warnings.count) warning\(review.warnings.count == 1 ? "" : "s"))"
-        content.body  = "\(count) candidate\(count == 1 ? "" : "s") selected\(warningNote)."
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content:    content,
-            trigger:    nil   // deliver immediately
-        )
-        try? await UNUserNotificationCenter.current().add(request)
-    }
-
-    @MainActor
-    private func deliverErrorNotification(error: Error) async {
-        let content = UNMutableNotificationContent()
-        content.title = "TradePilot — Pipeline Error"
-        content.body  = error.localizedDescription
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content:    content,
-            trigger:    nil
-        )
-        try? await UNUserNotificationCenter.current().add(request)
-    }
-
-    // MARK: - Helpers
-
-    /// Returns the next occurrence of 06:00 America/New_York.
-    private func nextSixAMEastern() -> Date {
-        var calendar  = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "America/New_York")!
-
-        var components        = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour       = 6
-        components.minute     = 0
-        components.second     = 0
-
-        guard var next = calendar.date(from: components) else { return Date() }
-        if next <= Date() {
-            next = calendar.date(byAdding: .day, value: 1, to: next) ?? next
+        Task {
+            await pipelineTask.value
+            task.setTaskCompleted(success: true)
         }
-        return next
+    }
+
+    // MARK: - Next trading day calculation
+
+    /// Returns the next trading day's 6:00 AM ET as a Date in the user's local timezone.
+    func nextTradingDayAt6AM() -> Date {
+        let etZone = TimeZone(identifier: "America/New_York")!
+        var etCalendar = Calendar(identifier: .gregorian)
+        etCalendar.timeZone = etZone
+
+        var candidate = Date()
+        // Advance at least one day
+        candidate = etCalendar.date(byAdding: .day, value: 1, to: candidate)!
+
+        for _ in 0..<14 {
+            if isTradingDay(candidate, calendar: etCalendar) {
+                var components = etCalendar.dateComponents([.year, .month, .day], from: candidate)
+                components.hour = 6
+                components.minute = 0
+                components.second = 0
+                components.timeZone = etZone
+                if let target = etCalendar.date(from: components) {
+                    return target
+                }
+            }
+            candidate = etCalendar.date(byAdding: .day, value: 1, to: candidate)!
+        }
+
+        // Fallback: 24 hours from now
+        return Date(timeIntervalSinceNow: 86400)
+    }
+
+    /// Returns true if the date is a weekday and not a NYSE holiday.
+    func isTradingDay(_ date: Date, calendar: Calendar) -> Bool {
+        let weekday = calendar.component(.weekday, from: date)
+        // Sunday = 1, Saturday = 7
+        guard weekday >= 2 && weekday <= 6 else { return false }
+        let dateString = Self.isoDateFormatter.string(from: date)
+        return !Self.marketHolidays.contains(dateString)
+    }
+
+    // MARK: - Local notification
+
+    private func postPipelineCompleteNotification(candidateCount: Int) {
+#if canImport(UserNotifications)
+        let content = UNMutableNotificationContent()
+        content.title = "TradePilot"
+        content.body = "Your \(candidateCount) daily TradePilot picks are ready."
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "com.tradepilot.pipeline.complete",
+            content: content,
+            trigger: nil  // deliver immediately
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                print("[BackgroundPipelineRunner] Notification error: \(error)")
+            }
+        }
+#endif
     }
 }

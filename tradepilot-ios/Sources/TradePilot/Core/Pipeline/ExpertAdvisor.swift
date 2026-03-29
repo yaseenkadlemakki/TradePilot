@@ -6,8 +6,8 @@ struct AdvisorReview {
     let isCoherent: Bool
     let warnings: [String]
     let finalCandidates: [ScoredCandidate]
-    /// LLM-generated analysis of warnings and portfolio coherence, if available.
-    let rationale: String?
+    /// LLM analysis text, populated when an LLMProvider is configured.
+    let llmAnalysis: String?
 }
 
 // MARK: - Sector mapping (simplified)
@@ -23,12 +23,19 @@ private let sectorMap: [String: String] = [
 
 // MARK: - Advisor
 
-/// Step 5 — Rule-based portfolio coherence review.
+/// Step 5 — Portfolio coherence review using the best available LLMProvider.
 struct ExpertAdvisor {
     private static let maxSameSector = 2
 
+    private let llmProvider: LLMProvider
+
+    init(llmProvider: LLMProvider = LLMProviderFactory.bestAvailable()) {
+        self.llmProvider = llmProvider
+    }
+
     /// Review a set of selected candidates for portfolio-level coherence.
-    func review(_ candidates: [ScoredCandidate]) -> AdvisorReview {
+    /// Also runs LLM analysis asynchronously when a provider is available.
+    func review(_ candidates: [ScoredCandidate]) async -> AdvisorReview {
         var warnings: [String] = []
         var filtered = candidates
 
@@ -41,43 +48,31 @@ struct ExpertAdvisor {
         // Rule 3: Flag if all 4 slots have the same direction
         checkRegimeAlignment(filtered, warnings: &warnings)
 
+        // Step 5b — LLM coherence analysis
+        let llmAnalysis = await runLLMAnalysis(candidates: filtered)
+
         return AdvisorReview(
             isCoherent: warnings.isEmpty,
             warnings: warnings,
             finalCandidates: filtered,
-            rationale: nil
-        )
-    }
-
-    /// Async variant that enriches the review with an LLM-generated rationale.
-    func reviewAsync(
-        _ candidates: [ScoredCandidate],
-        provider: (any LLMProvider)? = nil
-    ) async -> AdvisorReview {
-        let base = review(candidates)
-        let llm  = provider ?? LLMProviderFactory.makeProvider()
-
-        guard !base.warnings.isEmpty else {
-            return AdvisorReview(
-                isCoherent: base.isCoherent,
-                warnings: base.warnings,
-                finalCandidates: base.finalCandidates,
-                rationale: "✅ No rule violations detected. Portfolio appears coherent."
-            )
-        }
-
-        let prompt = "Portfolio advisor warnings:\n" + base.warnings.joined(separator: "\n")
-        let rationale = try? await llm.analyze(prompt: prompt)
-
-        return AdvisorReview(
-            isCoherent: base.isCoherent,
-            warnings: base.warnings,
-            finalCandidates: base.finalCandidates,
-            rationale: rationale
+            llmAnalysis: llmAnalysis
         )
     }
 
     // MARK: Private
+
+    private func runLLMAnalysis(candidates: [ScoredCandidate]) async -> String? {
+        guard !candidates.isEmpty else { return nil }
+        let prompt = buildPrompt(from: candidates)
+        return try? await llmProvider.analyze(prompt: prompt)
+    }
+
+    private func buildPrompt(from candidates: [ScoredCandidate]) -> String {
+        let lines = candidates.map { c in
+            "\(c.features.ticker): \(c.strategyType.rawValue) (score: \(String(format: "%.2f", c.compositeScore)))"
+        }
+        return "Review this options portfolio:\n" + lines.joined(separator: "\n")
+    }
 
     private func removeContradictions(
         _ candidates: [ScoredCandidate],
@@ -89,10 +84,8 @@ struct ExpertAdvisor {
         for candidate in candidates {
             let ticker = candidate.features.ticker
             if let existing = seen[ticker] {
-                // Contradictory = one bullish, one bearish on same ticker
                 if isContradictory(existing, candidate.strategyType) {
                     warnings.append("Contradictory trades on \(ticker): \(existing.displayName) vs \(candidate.strategyType.displayName). Keeping higher-scored.")
-                    // Keep whichever scored higher (already sorted descending)
                     continue
                 }
             } else {
