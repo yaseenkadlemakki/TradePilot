@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import TradePilot
 
-@Suite("Onboarding")
+@Suite("Onboarding", .serialized)
 struct OnboardingTests {
 
     private let defaults = UserDefaults.standard
