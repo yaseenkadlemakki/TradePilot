@@ -53,14 +53,16 @@ actor APIClient {
         self.decoder = decoder
 
         monitor = NWPathMonitor()
-        monitor.start(queue: DispatchQueue(label: "com.tradepilot.network-monitor"))
-    }
-
-    /// Call once after init to start receiving connectivity updates.
-    func startMonitoring() {
+        // Attach handler before starting so no updates are missed.
         monitor.pathUpdateHandler = { [weak self] path in
             Task { await self?.setConnected(path.status == .satisfied) }
         }
+        monitor.start(queue: DispatchQueue(label: "com.tradepilot.network-monitor"))
+        isConnected = monitor.currentPath.status == .satisfied
+    }
+
+    /// Retained for callers that need to trigger a manual connectivity refresh.
+    func startMonitoring() {
         isConnected = monitor.currentPath.status == .satisfied
     }
 
