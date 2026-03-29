@@ -5,9 +5,13 @@ from __future__ import annotations
 import time
 from datetime import date, datetime, timezone
 
+import structlog
 from data_pipelines.processors.feature_engineer import CandidateFeatures
 
+from agents.base import AgentError
 from agents.quant_strategy import QuantStrategyAgent, StrategyInput
+
+log = structlog.get_logger(__name__)
 
 
 class PipelineOrchestrator:
@@ -18,11 +22,26 @@ class PipelineOrchestrator:
 
     async def run(self, candidates: list[CandidateFeatures]) -> dict:
         start = time.monotonic()
-        strategy_output = await self._quant.run(StrategyInput(candidates=candidates))
+        run_date = date.today().isoformat()
+        log.info("pipeline.start", run_date=run_date, candidate_count=len(candidates))
+
+        try:
+            strategy_output = await self._quant.run(StrategyInput(candidates=candidates))
+        except Exception as exc:
+            elapsed = time.monotonic() - start
+            log.error(
+                "pipeline.error",
+                duration_seconds=round(elapsed, 3),
+                error=str(exc),
+                exc_type=type(exc).__name__,
+            )
+            raise AgentError("PipelineOrchestrator", f"Pipeline failed: {exc}") from exc
+
         elapsed = time.monotonic() - start
+        log.info("pipeline.complete", duration_seconds=round(elapsed, 3), proposal_count=len(strategy_output.proposals))
 
         return {
-            "run_date": date.today().isoformat(),
+            "run_date": run_date,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "recommendations": strategy_output.proposals,
             "pipeline_duration_seconds": round(elapsed, 3),
