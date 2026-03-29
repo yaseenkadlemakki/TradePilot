@@ -1,7 +1,6 @@
 """Unit tests for TickerExtractor — 14 tests."""
 
 import pytest
-
 from data_pipelines.processors.ticker_extractor import TickerExtractor
 
 

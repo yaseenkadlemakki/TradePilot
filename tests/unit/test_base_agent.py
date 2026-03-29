@@ -23,10 +23,6 @@ class SlowAgent(BaseAgent[float, str]):
         return "done"
 
 
-def run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
-
-
 # 1
 def test_agent_name_stored() -> None:
     agent = EchoAgent(name="echo")
@@ -34,16 +30,16 @@ def test_agent_name_stored() -> None:
 
 
 # 2
-def test_agent_run_returns_output() -> None:
+async def test_agent_run_returns_output() -> None:
     agent = EchoAgent(name="echo")
-    result = run(agent.run("hello"))
+    result = await agent.run("hello")
     assert result == "hello"
 
 
 # 3
-def test_elapsed_seconds_returns_float_after_run() -> None:
+async def test_elapsed_seconds_returns_float_after_run() -> None:
     agent = EchoAgent(name="echo")
-    run(agent.run("x"))
+    await agent.run("x")
     assert isinstance(agent.elapsed_seconds, float)
     assert agent.elapsed_seconds >= 0.0
 
@@ -55,30 +51,30 @@ def test_elapsed_seconds_zero_before_run() -> None:
 
 
 # 5
-def test_agent_without_timeout_runs_freely() -> None:
+async def test_agent_without_timeout_runs_freely() -> None:
     agent = EchoAgent(name="echo", timeout_seconds=None)
-    result = run(agent.run("no timeout"))
+    result = await agent.run("no timeout")
     assert result == "no timeout"
 
 
 # 6
-def test_agent_with_sufficient_timeout_completes() -> None:
+async def test_agent_with_sufficient_timeout_completes() -> None:
     agent = SlowAgent(name="slow", timeout_seconds=5.0)
-    result = run(agent.run(0.01))
+    result = await agent.run(0.01)
     assert result == "done"
 
 
 # 7
-def test_agent_timeout_raises_asyncio_timeout_error() -> None:
+async def test_agent_timeout_raises_asyncio_timeout_error() -> None:
     agent = SlowAgent(name="slow", timeout_seconds=0.01)
     with pytest.raises(asyncio.TimeoutError):
-        run(agent.run(10.0))
+        await agent.run(10.0)
 
 
 # 8
-def test_elapsed_seconds_reflects_actual_duration() -> None:
+async def test_elapsed_seconds_reflects_actual_duration() -> None:
     agent = EchoAgent(name="echo", timeout_seconds=None)
-    run(agent.run("measure"))
+    await agent.run("measure")
     # Should be tiny but non-negative
     assert agent.elapsed_seconds >= 0.0
     assert agent.elapsed_seconds < 5.0

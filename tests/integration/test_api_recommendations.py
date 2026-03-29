@@ -1,18 +1,12 @@
-"""Extended integration tests for recommendations API endpoints — 15 tests."""
+"""Extended integration tests for recommendations API endpoints — 14 tests."""
 
 from __future__ import annotations
-
-import sys
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tradepilot-backend"))
 
-
-
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def fresh_client() -> TestClient:
     """Use a fresh app instance via a clean TestClient."""
     from api.main import create_app
@@ -104,17 +98,7 @@ def test_health_version_is_correct(fresh_client: TestClient) -> None:
     assert response.json()["version"] == "0.1.0"
 
 
-# 14 — GET /today returns 200 after a /trigger is issued (background tasks run in test client)
-def test_get_today_returns_200_after_trigger_sync(fresh_client: TestClient) -> None:
-    # background_tasks in TestClient are run synchronously when raise_server_exceptions=True
-    fresh_client.post("/api/v1/recommendations/trigger")
-    # The service is now populated for today; check that /today returns 200
-    response = fresh_client.get("/api/v1/recommendations/today")
-    # Could be 200 (populated) or still 404 if background did not execute synchronously
-    assert response.status_code in (200, 404)
-
-
-# 15 — 404 for a past date that has no data
+# 14 — 404 for a past date that has no data
 def test_get_by_date_past_date_returns_404(fresh_client: TestClient) -> None:
     response = fresh_client.get("/api/v1/recommendations/2000-01-01")
     assert response.status_code == 404
