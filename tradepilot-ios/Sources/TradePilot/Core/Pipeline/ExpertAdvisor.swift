@@ -6,6 +6,8 @@ struct AdvisorReview {
     let isCoherent: Bool
     let warnings: [String]
     let finalCandidates: [ScoredCandidate]
+    /// LLM-generated analysis of warnings and portfolio coherence, if available.
+    let rationale: String?
 }
 
 // MARK: - Sector mapping (simplified)
@@ -42,7 +44,36 @@ struct ExpertAdvisor {
         return AdvisorReview(
             isCoherent: warnings.isEmpty,
             warnings: warnings,
-            finalCandidates: filtered
+            finalCandidates: filtered,
+            rationale: nil
+        )
+    }
+
+    /// Async variant that enriches the review with an LLM-generated rationale.
+    func reviewAsync(
+        _ candidates: [ScoredCandidate],
+        provider: (any LLMProvider)? = nil
+    ) async -> AdvisorReview {
+        let base = review(candidates)
+        let llm  = provider ?? LLMProviderFactory.makeProvider()
+
+        guard !base.warnings.isEmpty else {
+            return AdvisorReview(
+                isCoherent: base.isCoherent,
+                warnings: base.warnings,
+                finalCandidates: base.finalCandidates,
+                rationale: "✅ No rule violations detected. Portfolio appears coherent."
+            )
+        }
+
+        let prompt = "Portfolio advisor warnings:\n" + base.warnings.joined(separator: "\n")
+        let rationale = try? await llm.analyze(prompt: prompt)
+
+        return AdvisorReview(
+            isCoherent: base.isCoherent,
+            warnings: base.warnings,
+            finalCandidates: base.finalCandidates,
+            rationale: rationale
         )
     }
 
