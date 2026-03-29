@@ -70,8 +70,12 @@ struct SettingsView: View {
         Section("About") {
             LabeledContent("Version", value: appVersion)
             LabeledContent("Build", value: buildNumber)
-            Link("Privacy Policy", destination: URL(string: "https://tradepilot.app/privacy")!)
-            Link("Terms of Use",   destination: URL(string: "https://tradepilot.app/terms")!)
+            if let privacyURL = URL(string: "https://tradepilot.app/privacy") {
+                Link("Privacy Policy", destination: privacyURL)
+            }
+            if let termsURL = URL(string: "https://tradepilot.app/terms") {
+                Link("Terms of Use", destination: termsURL)
+            }
         }
     }
 

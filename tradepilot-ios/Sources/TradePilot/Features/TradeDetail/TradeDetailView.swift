@@ -64,7 +64,7 @@ struct TradeDetailView: View {
 
     private var signalsSection: some View {
         Section(isExpanded: $viewModel.signalsExpanded) {
-            ForEach(recommendation.supportingSignals, id: \.source) { signal in
+            ForEach(Array(recommendation.supportingSignals.enumerated()), id: \.offset) { _, signal in
                 SignalRow(signal: signal)
             }
         } header: {
@@ -101,7 +101,7 @@ struct TradeDetailView: View {
 
     private var citationsSection: some View {
         Section(isExpanded: $viewModel.citationsExpanded) {
-            ForEach(recommendation.sourceCitations, id: \.title) { cite in
+            ForEach(Array(recommendation.sourceCitations.enumerated()), id: \.offset) { _, cite in
                 CitationRow(citation: cite)
             }
         } header: {

@@ -18,8 +18,6 @@ final class DashboardViewModel {
     @MainActor
     func load(context: ModelContext) async {
         state = .loading
-        // Brief yield so skeleton shows on first appearance
-        try? await Task.sleep(for: .milliseconds(300))
         let items = cache.fetchToday(in: context)
         if items.isEmpty {
             state = .empty
