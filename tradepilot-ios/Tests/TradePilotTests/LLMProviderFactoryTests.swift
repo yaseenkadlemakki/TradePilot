@@ -62,11 +62,10 @@ final class LLMProviderFactoryTests: XCTestCase {
     func testAppleFoundationUnavailableBeforeiOS26() {
         let provider = AppleFoundationProvider()
         // Test hosts run macOS or iOS < 26
-        if #available(iOS 26, *) {
-            // On future devices this may be true; skip assertion
-        } else {
+        if #unavailable(iOS 26) {
             XCTAssertFalse(provider.isAvailable)
         }
+        // On iOS 26+, device support may vary; skip assertion
     }
 
     func testAppleFoundationFallsBackToRuleBased() async throws {

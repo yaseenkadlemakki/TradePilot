@@ -40,14 +40,14 @@ struct TradeDetailView: View {
     }
 
     private var contractRow: some View {
-        let c = recommendation.contract
+        let contract = recommendation.contract
         return VStack(alignment: .leading, spacing: 4) {
-            Text("\(c.action.rawValue) \(c.type.rawValue.uppercased()) — Strike $\(c.strike, specifier: "%.2f")")
+            Text("\(contract.action.rawValue) \(contract.type.rawValue.uppercased()) — Strike $\(contract.strike, specifier: "%.2f")")
                 .font(.subheadline.weight(.medium))
-            Text("Exp: \(c.expiration)  •  Bid: $\(c.bid, specifier: "%.2f")  Ask: $\(c.ask, specifier: "%.2f")")
+            Text("Exp: \(contract.expiration)  •  Bid: $\(contract.bid, specifier: "%.2f")  Ask: $\(contract.ask, specifier: "%.2f")")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("OI: \(c.openInterest)  •  Vol: \(c.volume)  •  Spread: \(c.spreadPct * 100, specifier: "%.1f")%%")
+            Text("OI: \(contract.openInterest)  •  Vol: \(contract.volume)  •  Spread: \(contract.spreadPct * 100, specifier: "%.1f")%%")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -73,27 +73,27 @@ struct TradeDetailView: View {
     }
 
     private var riskSection: some View {
-        let r = recommendation.riskAnalysis
+        let risk = recommendation.riskAnalysis
         return Section(isExpanded: $viewModel.riskExpanded) {
-            metricRow("Max Loss",          value: "$\(r.maxLoss, specifier: "%.2f")")
-            metricRow("Max Profit",        value: r.maxProfit.map { "$\($0, specifier: "%.2f")" } ?? "Unlimited")
-            metricRow("Break-even",        value: "$\(r.breakEvenPrice, specifier: "%.2f")")
-            metricRow("Prob. of Profit",   value: "\(r.probabilityOfProfit * 100, specifier: "%.1f")%%")
-            metricRow("Risk/Reward",       value: "\(r.riskRewardRatio, specifier: "%.2f")x")
-            ScenarioBars(risk: r)
+            metricRow("Max Loss", value: String(format: "$%.2f", risk.maxLoss))
+            metricRow("Max Profit", value: risk.maxProfit.map { String(format: "$%.2f", $0) } ?? "Unlimited")
+            metricRow("Break-even", value: String(format: "$%.2f", risk.breakEvenPrice))
+            metricRow("Prob. of Profit", value: String(format: "%.1f%%", risk.probabilityOfProfit * 100))
+            metricRow("Risk/Reward", value: String(format: "%.2fx", risk.riskRewardRatio))
+            ScenarioBars(risk: risk)
         } header: {
             sectionHeader("Risk", systemImage: "shield")
         }
     }
 
     private var greeksSection: some View {
-        let r = recommendation.riskAnalysis
+        let risk = recommendation.riskAnalysis
         return Section(isExpanded: $viewModel.greeksExpanded) {
-            metricRow("Delta", value: "\(r.delta, specifier: "%.4f")")
-            metricRow("Gamma", value: "\(r.gamma, specifier: "%.4f")")
-            metricRow("Theta", value: "\(r.theta, specifier: "%.4f")")
-            metricRow("Vega",  value: "\(r.vega, specifier: "%.4f")")
-            metricRow("IV",    value: "\(r.impliedVolatility * 100, specifier: "%.1f")%%")
+            metricRow("Delta", value: String(format: "%.4f", risk.delta))
+            metricRow("Gamma", value: String(format: "%.4f", risk.gamma))
+            metricRow("Theta", value: String(format: "%.4f", risk.theta))
+            metricRow("Vega", value: String(format: "%.4f", risk.vega))
+            metricRow("IV", value: String(format: "%.1f%%", risk.impliedVolatility * 100))
         } header: {
             sectionHeader("Greeks", systemImage: "function")
         }
@@ -183,9 +183,9 @@ private struct ScenarioBars: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("P&L Scenarios").font(.caption).foregroundStyle(.secondary)
-            scenarioBar("Bullish",  value: risk.scenarioBullish, color: .green)
-            scenarioBar("Base",     value: risk.scenarioBase,    color: .blue)
-            scenarioBar("Bearish",  value: risk.scenarioBearish, color: .red)
+            scenarioBar("Bullish", value: risk.scenarioBullish, color: .green)
+            scenarioBar("Base", value: risk.scenarioBase, color: .blue)
+            scenarioBar("Bearish", value: risk.scenarioBearish, color: .red)
         }
     }
 

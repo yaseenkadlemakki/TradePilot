@@ -17,9 +17,9 @@ final class HistoryViewModel {
     private let cache = LocalCache()
     private let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        return f
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
     }()
 
     @MainActor

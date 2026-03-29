@@ -51,14 +51,14 @@ final class SettingsViewModelTests: XCTestCase {
     }
 
     func testRiskToleranceDisplayNames() {
-        XCTAssertEqual(RiskTolerance.low.displayName,    "Low")
+        XCTAssertEqual(RiskTolerance.low.displayName, "Low")
         XCTAssertEqual(RiskTolerance.medium.displayName, "Medium")
-        XCTAssertEqual(RiskTolerance.high.displayName,   "High")
+        XCTAssertEqual(RiskTolerance.high.displayName, "High")
     }
 
     func testRiskToleranceRawValues() {
-        XCTAssertEqual(RiskTolerance.low.rawValue,    "low")
+        XCTAssertEqual(RiskTolerance.low.rawValue, "low")
         XCTAssertEqual(RiskTolerance.medium.rawValue, "medium")
-        XCTAssertEqual(RiskTolerance.high.rawValue,   "high")
+        XCTAssertEqual(RiskTolerance.high.rawValue, "high")
     }
 }

@@ -24,8 +24,8 @@ enum LLMProviderError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unavailable(let p):       return "\(p) provider is not available."
-        case .networkError(let e):      return "Network error: \(e.localizedDescription)"
+        case .unavailable(let provider): return "\(provider) provider is not available."
+        case .networkError(let underlying): return "Network error: \(underlying.localizedDescription)"
         case .invalidResponse:          return "LLM returned an unexpected response format."
         case .timeout:                  return "LLM request timed out."
         }

@@ -35,8 +35,8 @@ struct TradeCardView: View {
     }
 
     private var contractLabel: some View {
-        let c = recommendation.contract
-        return Text("\(c.action.rawValue) \(c.type.rawValue.uppercased()) $\(c.strike, specifier: "%.0f") • \(c.expiration)")
+        let contract = recommendation.contract
+        return Text("\(contract.action.rawValue) \(contract.type.rawValue.uppercased()) $\(contract.strike, specifier: "%.0f") • \(contract.expiration)")
             .font(.caption.monospacedDigit())
             .foregroundStyle(.secondary)
     }

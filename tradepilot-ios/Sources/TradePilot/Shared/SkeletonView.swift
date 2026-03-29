@@ -33,7 +33,7 @@ struct SkeletonView: View {
                 Color(.systemGray5)
             ]),
             startPoint: UnitPoint(x: phase - 1, y: 0.5),
-            endPoint:   UnitPoint(x: phase,     y: 0.5)
+            endPoint: UnitPoint(x: phase, y: 0.5)
         )
     }
 }

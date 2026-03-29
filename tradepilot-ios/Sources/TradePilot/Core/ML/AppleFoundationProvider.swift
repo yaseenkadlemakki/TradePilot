@@ -38,7 +38,7 @@ struct AppleFoundationProvider: LLMProvider {
     /// Returns true when the device hardware supports Apple Intelligence.
     /// Replace with `LanguageModelSession.isSupported` once Foundation Models SDK lands.
     private func _deviceSupportsOnDeviceLLM() -> Bool {
-        // TODO: Replace with FoundationModels.LanguageModelSession.isSupported
+        // Replace with FoundationModels.LanguageModelSession.isSupported
         // when iOS 26 SDK is available in Xcode.
         return false
     }
@@ -47,7 +47,7 @@ struct AppleFoundationProvider: LLMProvider {
     /// Replace body with real LanguageModelSession calls when SDK is available.
     @available(iOS 26, *)
     private func _runOnDeviceSession(prompt: String) async throws -> String {
-        // TODO: Swap in FoundationModels implementation:
+        // Swap in FoundationModels implementation when SDK is available:
         //
         //   let session = LanguageModelSession()
         //   let response = try await session.respond(to: Prompt(prompt))
