@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import pytest
 
-# Make tradepilot-backend importable as the root package namespace
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tradepilot-backend"))
-
-from data_pipelines.processors.feature_engineer import CandidateFeatures  # noqa: E402
+from data_pipelines.processors.feature_engineer import CandidateFeatures
 
 
 @pytest.fixture()

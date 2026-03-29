@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from data_pipelines.processors.feature_engineer import CandidateFeatures
 
@@ -23,13 +23,10 @@ class PipelineOrchestrator:
 
         return {
             "run_date": date.today().isoformat(),
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "recommendations": strategy_output.proposals,
             "pipeline_duration_seconds": round(elapsed, 3),
         }
-
-    async def run_async(self, candidates: list[CandidateFeatures]) -> dict:
-        return await self.run(candidates)
 
 
 async def run_pipeline(candidates: list[CandidateFeatures] | None = None) -> dict:

@@ -5,14 +5,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-import sys
-from pathlib import Path
-
-# Ensure tradepilot-backend is on sys.path (conftest.py also does this,
-# but we import app before conftest runs in some environments)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tradepilot-backend"))
-
-from api.main import app  # noqa: E402
+from api.main import app
 
 
 @pytest.fixture(scope="module")

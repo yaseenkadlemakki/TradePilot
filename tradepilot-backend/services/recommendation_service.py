@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from datetime import date
 from typing import Any
@@ -30,7 +29,10 @@ class RecommendationService:
     def get_history(self, days: int = 30, strategy: str | None = None) -> list[dict[str, Any]]:
         results = list(self._store.values())
         if strategy:
-            results = [r for r in results if any(p.get("strategy_type") == strategy for p in r.get("recommendations", []))]
+            results = [
+                r for r in results
+                if any(p.get("strategy_type") == strategy for p in r.get("recommendations", []))
+            ]
         return results[-days:]
 
     def get_performance(self) -> dict[str, Any]:
@@ -45,13 +47,8 @@ class RecommendationService:
     # Pipeline trigger
     # ------------------------------------------------------------------
 
-    def run_pipeline(self) -> dict[str, Any]:
-        loop = asyncio.new_event_loop()
-        try:
-            result = loop.run_until_complete(run_pipeline())
-        finally:
-            loop.close()
-
+    async def run_pipeline(self) -> dict[str, Any]:
+        result = await run_pipeline()
         rec_id = str(uuid.uuid4())
         result["id"] = rec_id
         self._store[rec_id] = result
