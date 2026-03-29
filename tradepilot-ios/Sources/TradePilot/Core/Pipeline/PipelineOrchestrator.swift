@@ -9,8 +9,8 @@ enum PipelineError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .insufficientCandidates(let n): return "Only \(n) candidates passed compliance checks."
-        case .agentTimeout(let a):           return "Agent '\(a)' timed out."
+        case .insufficientCandidates(let count): return "Only \(count) candidates passed compliance checks."
+        case .agentTimeout(let agentName):       return "Agent '\(agentName)' timed out."
         case .allSlotsRejected:              return "All strategy slots were rejected after \(maxRetries) retries."
         }
     }

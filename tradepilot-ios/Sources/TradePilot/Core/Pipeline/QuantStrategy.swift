@@ -33,10 +33,10 @@ struct QuantStrategy {
     func selectCandidates(from features: [CandidateFeatures]) -> [ScoredCandidate] {
         var slotBest: [StrategyType: ScoredCandidate] = [:]
 
-        for f in features {
-            let strategy = assignStrategy(to: f)
-            let score    = compositeScore(for: f)
-            let candidate = ScoredCandidate(features: f, strategyType: strategy, compositeScore: score)
+        for feature in features {
+            let strategy = assignStrategy(to: feature)
+            let score    = compositeScore(for: feature)
+            let candidate = ScoredCandidate(features: feature, strategyType: strategy, compositeScore: score)
 
             if let existing = slotBest[strategy] {
                 if score > existing.compositeScore {
@@ -53,31 +53,31 @@ struct QuantStrategy {
     // MARK: Private
 
     /// Determine strategy based on the feature vector's direction signals.
-    func assignStrategy(to f: CandidateFeatures) -> StrategyType {
-        let isOverbought  = f.rsiValue >= Self.overboughtRSI
-                         || f.bollingerPosition >= Self.bollingerUpperZone
-        let isSupported   = f.rsiValue <= Self.oversoldRSI
-                         && f.impliedVolatilityRank < 0.5
-        let isBullish     = f.sentimentScore >= Self.bullishThreshold
-                         && f.callPutRatio > 0.55
-        let isBearish     = f.sentimentScore <= Self.bearishThreshold
-                         && f.callPutRatio < 0.45
+    func assignStrategy(to features: CandidateFeatures) -> StrategyType {
+        let isOverbought  = features.rsiValue >= Self.overboughtRSI
+                         || features.bollingerPosition >= Self.bollingerUpperZone
+        let isSupported   = features.rsiValue <= Self.oversoldRSI
+                         && features.impliedVolatilityRank < 0.5
+        let isBullish     = features.sentimentScore >= Self.bullishThreshold
+                         && features.callPutRatio > 0.55
+        let isBearish     = features.sentimentScore <= Self.bearishThreshold
+                         && features.callPutRatio < 0.45
 
         switch true {
         case isOverbought:         return .shortCall
         case isSupported:          return .sellPut
         case isBullish:            return .longCall
         case isBearish:            return .longPut
-        default:                   return f.sentimentScore >= 0 ? .longCall : .longPut
+        default:                   return features.sentimentScore >= 0 ? .longCall : .longPut
         }
     }
 
-    func compositeScore(for f: CandidateFeatures) -> Double {
-        let signalComponent     = signalScore(f)
-        let riskRewardComponent = riskRewardScore(f)
-        let liquidityComponent  = liquidityScore(f)
-        let convictionComponent = convictionScore(f)
-        let noveltyComponent    = noveltyScore(f)
+    func compositeScore(for features: CandidateFeatures) -> Double {
+        let signalComponent     = signalScore(features)
+        let riskRewardComponent = riskRewardScore(features)
+        let liquidityComponent  = liquidityScore(features)
+        let convictionComponent = convictionScore(features)
+        let noveltyComponent    = noveltyScore(features)
 
         return Self.wSignal     * signalComponent
              + Self.wRiskReward * riskRewardComponent
@@ -88,28 +88,28 @@ struct QuantStrategy {
 
     // Score sub-components (all normalised to 0–1)
 
-    private func signalScore(_ f: CandidateFeatures) -> Double {
-        let normalised = (f.sentimentScore + 1) / 2   // shift [-1,1] to [0,1]
-        return (normalised + f.unusualFlowScore) / 2
+    private func signalScore(_ features: CandidateFeatures) -> Double {
+        let normalised = (features.sentimentScore + 1) / 2   // shift [-1,1] to [0,1]
+        return (normalised + features.unusualFlowScore) / 2
     }
 
-    private func riskRewardScore(_ f: CandidateFeatures) -> Double {
+    private func riskRewardScore(_ features: CandidateFeatures) -> Double {
         // Lower spread = better risk/reward for the buyer
-        return max(0, 1 - f.bidAskSpreadPct / 0.20)
+        return max(0, 1 - features.bidAskSpreadPct / 0.20)
     }
 
-    private func liquidityScore(_ f: CandidateFeatures) -> Double {
-        let oiNorm  = min(f.openInterest / 10_000, 1.0)
-        let volNorm = min(f.optionVolume  / 1_000,  1.0)
+    private func liquidityScore(_ features: CandidateFeatures) -> Double {
+        let oiNorm  = min(features.openInterest / 10_000, 1.0)
+        let volNorm = min(features.optionVolume / 1_000, 1.0)
         return (oiNorm + volNorm) / 2
     }
 
-    private func convictionScore(_ f: CandidateFeatures) -> Double {
-        return (f.mentionVolume + f.openInterestRank) / 2
+    private func convictionScore(_ features: CandidateFeatures) -> Double {
+        return (features.mentionVolume + features.openInterestRank) / 2
     }
 
-    private func noveltyScore(_ f: CandidateFeatures) -> Double {
+    private func noveltyScore(_ features: CandidateFeatures) -> Double {
         // Momentum signals indicate novelty
-        return min(abs(f.sentimentMomentum) * 2, 1.0)
+        return min(abs(features.sentimentMomentum) * 2, 1.0)
     }
 }
