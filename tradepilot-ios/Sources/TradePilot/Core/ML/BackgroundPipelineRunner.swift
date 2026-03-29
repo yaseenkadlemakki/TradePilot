@@ -4,6 +4,10 @@ import UserNotifications
 
 /// Schedules and handles daily 6 AM ET pipeline runs via `BGTaskScheduler`.
 /// Register early in `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
+///
+/// Thread-safety note: `@unchecked Sendable` is used because this is a singleton accessed via
+/// `BackgroundPipelineRunner.shared` and all mutable state mutations are serialized through
+/// `BGTaskScheduler` callbacks which are delivered on the main thread.
 final class BackgroundPipelineRunner: @unchecked Sendable {
     static let shared = BackgroundPipelineRunner()
     static let taskIdentifier = "com.tradepilot.pipeline.daily"
@@ -18,7 +22,11 @@ final class BackgroundPipelineRunner: @unchecked Sendable {
             forTaskWithIdentifier: Self.taskIdentifier,
             using: nil
         ) { [weak self] task in
-            self?.handlePipelineTask(task as! BGProcessingTask)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self?.handlePipelineTask(processingTask)
         }
     }
 
@@ -34,7 +42,7 @@ final class BackgroundPipelineRunner: @unchecked Sendable {
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            // Silently skip if background tasks are not supported (simulator, etc.)
+            print("BackgroundPipelineRunner: failed to schedule task — \(error.localizedDescription)")
         }
     }
 
