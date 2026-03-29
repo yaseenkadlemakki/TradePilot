@@ -47,8 +47,7 @@ actor NewsService {
         var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "category", value: "business"),
             URLQueryItem(name: "language", value: "en"),
-            URLQueryItem(name: "pageSize", value: "\(pageSize)"),
-            URLQueryItem(name: "apiKey", value: apiKey)
+            URLQueryItem(name: "pageSize", value: "\(pageSize)")
         ]
         if let q = query { queryItems.append(URLQueryItem(name: "q", value: q)) }
         components.queryItems = queryItems
@@ -56,7 +55,7 @@ actor NewsService {
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let response: NewsAPIResponse = try await client.fetch(url: url, headers: [:])
+        let response: NewsAPIResponse = try await client.fetch(url: url, headers: ["X-Api-Key": apiKey])
         return response.articles
     }
 

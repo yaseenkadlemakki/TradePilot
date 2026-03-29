@@ -50,11 +50,18 @@ actor RedditService {
 
     private let client: APIClient
     private let keychain: KeychainManager
+    private let session: URLSession
     private var accessToken: String?
+    private var tokenExpiresAt: Date?
 
-    init(client: APIClient = APIClient(), keychain: KeychainManager = KeychainManager()) {
+    init(
+        client: APIClient = APIClient(),
+        keychain: KeychainManager = KeychainManager(),
+        session: URLSession = .shared
+    ) {
         self.client   = client
         self.keychain = keychain
+        self.session  = session
     }
 
     /// Fetch hot posts from all target subreddits.
@@ -77,7 +84,9 @@ actor RedditService {
     // MARK: Private
 
     private func ensureToken() async throws -> String {
-        if let existing = accessToken { return existing }
+        if let existing = accessToken, let expiresAt = tokenExpiresAt, Date() < expiresAt {
+            return existing
+        }
 
         guard
             let clientID     = keychain.load(service: KeychainManager.ServiceKey.redditClientID),
@@ -99,12 +108,13 @@ actor RedditService {
         request.setValue("TradePilot/1.0 by TradePilotApp", forHTTPHeaderField: "User-Agent")
         request.httpBody = "grant_type=client_credentials".data(using: .utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             throw APIError.unauthorized
         }
         let oauthResp = try JSONDecoder().decode(OAuthResponse.self, from: data)
-        accessToken = oauthResp.accessToken
+        accessToken    = oauthResp.accessToken
+        tokenExpiresAt = Date().addingTimeInterval(3600)
         return oauthResp.accessToken
     }
 }

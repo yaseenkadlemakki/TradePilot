@@ -78,7 +78,8 @@ actor PolygonService {
     /// Fetch the latest daily bar for `ticker`.
     func fetchOHLCV(ticker: String) async throws -> PolygonOHLCV {
         let apiKey = try requireKey()
-        let urlString = "\(Self.baseURL)/v2/aggs/ticker/\(ticker)/prev"
+        let encodedTicker = ticker.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ticker
+        let urlString = "\(Self.baseURL)/v2/aggs/ticker/\(encodedTicker)/prev"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let headers = ["Authorization": "Bearer \(apiKey)"]
 
@@ -95,7 +96,8 @@ actor PolygonService {
     /// Fetch options chain for `ticker` (nearest two expirations).
     func fetchOptionsChain(ticker: String) async throws -> [PolygonOptionContract] {
         let apiKey = try requireKey()
-        let urlString = "\(Self.baseURL)/v3/reference/options/\(ticker)?limit=250"
+        let encodedTicker = ticker.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ticker
+        let urlString = "\(Self.baseURL)/v3/reference/options/\(encodedTicker)?limit=250"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let headers = ["Authorization": "Bearer \(apiKey)"]
         let response: PolygonOptionsChain = try await client.fetch(url: url, headers: headers)
@@ -105,7 +107,8 @@ actor PolygonService {
     /// Fetch RSI(14) for `ticker`.
     func fetchRSI(ticker: String) async throws -> Double {
         let apiKey = try requireKey()
-        let urlString = "\(Self.baseURL)/v1/indicators/rsi/\(ticker)?timespan=day&window=14&series_type=close&limit=1"
+        let encodedTicker = ticker.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ticker
+        let urlString = "\(Self.baseURL)/v1/indicators/rsi/\(encodedTicker)?timespan=day&window=14&series_type=close&limit=1"
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let headers = ["Authorization": "Bearer \(apiKey)"]
 

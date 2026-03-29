@@ -85,16 +85,26 @@ struct LocalCache {
         let start = Calendar.current.startOfDay(for: Date())
         let pred  = #Predicate<CachedRecommendation> { $0.generatedAt >= start }
         let desc  = FetchDescriptor(predicate: pred, sortBy: [SortDescriptor(\.generatedAt, order: .reverse)])
-        let cached = (try? context.fetch(desc)) ?? []
-        return cached.compactMap { decode($0) }
+        do {
+            let cached = try context.fetch(desc)
+            return cached.compactMap { decode($0) }
+        } catch {
+            print("SwiftData error fetching today's recommendations: \(error)")
+            return []
+        }
     }
 
     /// Fetch recommendations in a date range.
     func fetchHistory(from start: Date, to end: Date, in context: ModelContext) -> [Recommendation] {
         let pred = #Predicate<CachedRecommendation> { $0.generatedAt >= start && $0.generatedAt <= end }
         let desc = FetchDescriptor(predicate: pred, sortBy: [SortDescriptor(\.generatedAt, order: .reverse)])
-        let cached = (try? context.fetch(desc)) ?? []
-        return cached.compactMap { decode($0) }
+        do {
+            let cached = try context.fetch(desc)
+            return cached.compactMap { decode($0) }
+        } catch {
+            print("SwiftData error fetching recommendation history: \(error)")
+            return []
+        }
     }
 
     /// Delete a recommendation by id.
@@ -109,18 +119,27 @@ struct LocalCache {
     func setPreference(key: String, value: String, in context: ModelContext) {
         let pred = #Predicate<UserPreference> { $0.key == key }
         let desc = FetchDescriptor(predicate: pred)
-        if let existing = (try? context.fetch(desc))?.first {
-            existing.value     = value
-            existing.updatedAt = Date()
-        } else {
-            context.insert(UserPreference(key: key, value: value))
+        do {
+            if let existing = try context.fetch(desc).first {
+                existing.value     = value
+                existing.updatedAt = Date()
+            } else {
+                context.insert(UserPreference(key: key, value: value))
+            }
+        } catch {
+            print("SwiftData error setting preference '\(key)': \(error)")
         }
     }
 
     func getPreference(key: String, in context: ModelContext) -> String? {
         let pred = #Predicate<UserPreference> { $0.key == key }
         let desc = FetchDescriptor(predicate: pred)
-        return (try? context.fetch(desc))?.first?.value
+        do {
+            return try context.fetch(desc).first?.value
+        } catch {
+            print("SwiftData error getting preference '\(key)': \(error)")
+            return nil
+        }
     }
 
     // MARK: Private
@@ -128,7 +147,12 @@ struct LocalCache {
     private func fetchByID(_ id: String, in context: ModelContext) -> CachedRecommendation? {
         let pred = #Predicate<CachedRecommendation> { $0.id == id }
         let desc = FetchDescriptor(predicate: pred)
-        return (try? context.fetch(desc))?.first
+        do {
+            return try context.fetch(desc).first
+        } catch {
+            print("SwiftData error fetching recommendation by id '\(id)': \(error)")
+            return nil
+        }
     }
 
     private func decode(_ cached: CachedRecommendation) -> Recommendation? {
