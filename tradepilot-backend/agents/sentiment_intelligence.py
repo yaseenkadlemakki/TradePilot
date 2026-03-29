@@ -36,12 +36,5 @@ class SentimentIntelligenceAgent(BaseAgent[SentimentInput, SentimentOutput]):
         if not candidates:
             raise ValueError("No candidates supplied to SentimentIntelligenceAgent")
 
-        self._log.info("sentiment_intelligence.start", candidate_count=len(candidates))
-        try:
-            # Sentiment scoring is scaffolded; pass candidates through unchanged.
-            result = SentimentOutput(candidates=candidates, report={"scorer": "stub"})
-            self._log.info("sentiment_intelligence.complete", scored_count=len(candidates))
-            return result
-        except Exception as exc:
-            self._log.error("sentiment_intelligence.error", error=str(exc))
-            raise
+        # Sentiment scoring is scaffolded; pass candidates through unchanged.
+        return SentimentOutput(candidates=candidates, report={"scorer": "stub"})

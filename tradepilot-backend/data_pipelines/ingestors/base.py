@@ -21,7 +21,7 @@ class BaseIngestor(ABC):
 
     async def fetch(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Fetch records, logging start/complete/error with record counts."""
-        self._log.info("ingestor.fetch_start", kwargs=kwargs)
+        self._log.info("ingestor.fetch_start", kwarg_keys=list(kwargs.keys()))
         try:
             records = await self._fetch(**kwargs)
             self._log.info("ingestor.fetch_complete", record_count=len(records))

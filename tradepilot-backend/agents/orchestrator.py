@@ -35,7 +35,7 @@ class PipelineOrchestrator:
                 error=str(exc),
                 exc_type=type(exc).__name__,
             )
-            raise AgentError("PipelineOrchestrator", f"Pipeline failed: {exc}", cause=exc) from exc
+            raise AgentError("PipelineOrchestrator", f"Pipeline failed: {exc}") from exc
 
         elapsed = time.monotonic() - start
         log.info("pipeline.complete", duration_seconds=round(elapsed, 3), proposal_count=len(strategy_output.proposals))
