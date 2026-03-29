@@ -1,33 +1,33 @@
 import Foundation
 
-// MARK: - Errors
+// MARK: - LLM Provider Protocol
+
+/// Abstraction over any LLM backend (cloud, on-device, rule-based).
+protocol LLMProvider {
+    /// Analyze a portfolio prompt and return structured text.
+    func analyze(prompt: String) async throws -> String
+
+    /// Whether this provider can be used (key present, device capable, etc.).
+    var isAvailable: Bool { get }
+
+    /// Human-readable name for debugging and logging.
+    var name: String { get }
+}
+
+// MARK: - Provider errors
 
 enum LLMProviderError: Error, LocalizedError {
-    case notAvailable
-    case notImplemented
-    case requestFailed(statusCode: Int, body: String)
-    case decodingFailed
+    case unavailable(provider: String)
+    case networkError(underlying: Error)
+    case invalidResponse
+    case timeout
 
     var errorDescription: String? {
         switch self {
-        case .notAvailable:                    return "LLM provider is not available."
-        case .notImplemented:                  return "LLM provider is not yet implemented."
-        case .requestFailed(let code, let b):  return "Request failed (\(code)): \(b)"
-        case .decodingFailed:                  return "Failed to decode LLM response."
+        case .unavailable(let p):       return "\(p) provider is not available."
+        case .networkError(let e):      return "Network error: \(e.localizedDescription)"
+        case .invalidResponse:          return "LLM returned an unexpected response format."
+        case .timeout:                  return "LLM request timed out."
         }
     }
-}
-
-// MARK: - Protocol
-
-/// Contract for any text-inference backend used by the pipeline.
-protocol LLMProvider: Sendable {
-    /// Human-readable provider name.
-    var name: String { get }
-
-    /// Whether the provider can be used in the current environment.
-    var isAvailable: Bool { get }
-
-    /// Send a free-form prompt and return the model's text reply.
-    func analyze(prompt: String) async throws -> String
 }

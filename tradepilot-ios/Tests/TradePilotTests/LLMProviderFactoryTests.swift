@@ -3,40 +3,77 @@ import XCTest
 
 final class LLMProviderFactoryTests: XCTestCase {
 
+    private var keychain: KeychainManager!
+
     override func setUp() {
         super.setUp()
-        // Clear any persisted Claude API key so tests are deterministic.
-        UserDefaults.standard.removeObject(forKey: ClaudeAPIProvider.userDefaultsKey)
+        keychain = KeychainManager()
+        keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey)
     }
 
-    func testReturnsRuleBasedWhenNoKeyAndNoAppleFoundation() {
-        let provider = LLMProviderFactory.makeProvider(claudeAPIKey: nil)
-        // On test target (pre-iOS 26, no key) we should fall back to RuleBased.
-        // Accept either RuleBased or AppleFoundation depending on simulator OS.
-        let acceptableNames = ["RuleBased", "AppleFoundation"]
-        XCTAssertTrue(acceptableNames.contains(provider.name),
-                      "Unexpected provider: \(provider.name)")
+    override func tearDown() {
+        keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey)
+        super.tearDown()
     }
 
-    func testReturnsClaudeWhenKeyProvided() {
-        let provider = LLMProviderFactory.makeProvider(claudeAPIKey: "sk-test-key")
-        XCTAssertEqual(provider.name, "Claude")
+    // MARK: - Default provider
+
+    func testDefaultProviderIsRuleBased() {
+        // No Claude key, AppleFoundation not available on test host
+        let provider = LLMProviderFactory.bestAvailable()
+        XCTAssertEqual(provider.name, "RuleBasedAdvisor")
     }
 
-    func testSelectedProviderIsAvailable() {
-        let provider = LLMProviderFactory.makeProvider(claudeAPIKey: nil)
-        XCTAssertTrue(provider.isAvailable)
+    func testDefaultProviderIsAvailable() {
+        let provider = LLMProviderFactory.bestAvailable()
+        XCTAssertTrue(provider.isAvailable, "bestAvailable() must always return an available provider")
     }
 
-    func testClaudeProviderPrioritisedOverRuleBased() {
-        let provider = LLMProviderFactory.makeProvider(claudeAPIKey: "any-key")
-        // Claude should win over all others when a key is supplied.
-        XCTAssertEqual(provider.name, "Claude")
+    // MARK: - Priority: Claude API > AppleFoundation > RuleBased
+
+    func testClaudeAPISelectedWhenKeyPresent() throws {
+        try keychain.save(key: "sk-test-abc123", service: KeychainManager.ServiceKey.claudeAPIKey)
+        let provider = LLMProviderFactory.bestAvailable()
+        XCTAssertTrue(provider.name.contains("claude"), "Claude provider should be selected when key is present")
     }
 
-    func testRuleBasedIsFallbackProvider() {
-        let provider = RuleBasedAdvisor()
-        XCTAssertTrue(provider.isAvailable)
-        XCTAssertEqual(provider.name, "RuleBased")
+    func testRuleBasedSelectedWhenClaudeKeyRemoved() throws {
+        try keychain.save(key: "sk-test", service: KeychainManager.ServiceKey.claudeAPIKey)
+        keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey)
+        let provider = LLMProviderFactory.bestAvailable()
+        XCTAssertEqual(provider.name, "RuleBasedAdvisor")
+    }
+
+    // MARK: - RuleBasedAdvisor protocol conformance
+
+    func testRuleBasedAdvisorIsAlwaysAvailable() {
+        let advisor = RuleBasedAdvisor()
+        XCTAssertTrue(advisor.isAvailable)
+    }
+
+    func testRuleBasedAdvisorCanAnalyze() async throws {
+        let advisor = RuleBasedAdvisor()
+        let result = try await advisor.analyze(prompt: "AAPL: LongCall (score: 0.80)")
+        XCTAssertFalse(result.isEmpty, "RuleBasedAdvisor should return non-empty analysis")
+    }
+
+    // MARK: - AppleFoundationProvider
+
+    func testAppleFoundationUnavailableBeforeiOS26() {
+        let provider = AppleFoundationProvider()
+        // Test hosts run macOS or iOS < 26
+        if #available(iOS 26, *) {
+            // On future devices this may be true; skip assertion
+        } else {
+            XCTAssertFalse(provider.isAvailable)
+        }
+    }
+
+    func testAppleFoundationFallsBackToRuleBased() async throws {
+        let provider = AppleFoundationProvider()
+        // Whether or not device supports iOS 26, analyze() should not throw
+        // (either runs on-device or falls back to RuleBasedAdvisor)
+        let result = try await provider.analyze(prompt: "AAPL: LongCall")
+        XCTAssertFalse(result.isEmpty)
     }
 }

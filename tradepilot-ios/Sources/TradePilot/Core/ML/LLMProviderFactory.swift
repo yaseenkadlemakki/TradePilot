@@ -1,14 +1,18 @@
 import Foundation
 
-/// Selects the best available `LLMProvider` at runtime.
-/// Priority: Claude API > Apple Foundation Models > Rule-Based.
-enum LLMProviderFactory {
+// MARK: - LLM Provider Factory
 
-    /// Return the highest-priority provider that reports itself as available.
-    /// - Parameter claudeAPIKey: Optional override for the Claude API key
-    ///   (falls back to `UserDefaults` if `nil`).
-    static func makeProvider(claudeAPIKey: String? = nil) -> any LLMProvider {
-        let claude = ClaudeAPIProvider(apiKey: claudeAPIKey)
+/// Selects the best available LLMProvider at runtime.
+///
+/// Priority order:
+/// 1. ClaudeAPIProvider — if a Claude API key is stored in Keychain
+/// 2. AppleFoundationProvider — if device supports Apple Intelligence (iOS 26+)
+/// 3. RuleBasedAdvisor — always available, no key or network required
+final class LLMProviderFactory {
+
+    /// Returns the highest-priority available provider.
+    static func bestAvailable() -> LLMProvider {
+        let claude = ClaudeAPIProvider()
         if claude.isAvailable { return claude }
 
         let apple = AppleFoundationProvider()
