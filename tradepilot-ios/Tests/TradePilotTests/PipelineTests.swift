@@ -7,9 +7,9 @@ final class PipelineTests: XCTestCase {
 
     func testSentimentScorerBullishText() {
         let scorer = SentimentScorer()
-        let texts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy signal, calls are printing, bullish breakout", "news",   Date()),
-            ("Long AAPL, moon incoming, rally expected",                 "reddit", Date())
+        let texts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy signal, calls are printing, bullish breakout", "news", Date()),
+            ("Long AAPL, moon incoming, rally expected", "reddit", Date())
         ]
         let score = scorer.score(texts: texts)
         XCTAssertGreaterThan(score, 0)
@@ -17,9 +17,9 @@ final class PipelineTests: XCTestCase {
 
     func testSentimentScorerBearishText() {
         let scorer = SentimentScorer()
-        let texts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Bear market crash incoming, puts are printing",    "news",   Date()),
-            ("Selling everything, bearish dump, strong sell",    "reddit", Date())
+        let texts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Bear market crash incoming, puts are printing", "news", Date()),
+            ("Selling everything, bearish dump, strong sell", "reddit", Date())
         ]
         let score = scorer.score(texts: texts)
         XCTAssertLessThan(score, 0)
@@ -27,7 +27,7 @@ final class PipelineTests: XCTestCase {
 
     func testSentimentScorerNeutralText() {
         let scorer = SentimentScorer()
-        let texts: [(text: String, source: String, publishedAt: Date)] = [
+        let texts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
             ("The company reported quarterly results today", "news", Date())
         ]
         let score = scorer.score(texts: texts)
@@ -41,7 +41,7 @@ final class PipelineTests: XCTestCase {
 
     func testSentimentScorerScoreRange() {
         let scorer = SentimentScorer()
-        let texts: [(text: String, source: String, publishedAt: Date)] = [
+        let texts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
             ("buy buy buy buy buy buy calls moon bull bullish breakout rally positive growth upgrade beat record", "news", Date())
         ]
         let score = scorer.score(texts: texts)
@@ -54,11 +54,14 @@ final class PipelineTests: XCTestCase {
         let now    = Date()
         let old    = now.addingTimeInterval(-7 * 24 * 3600)  // 1 week ago
 
-        let recentTexts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy bullish calls moon", "reddit", now)
+        // Anchor with a neutral post so the weighted average differs by decay
+        let recentTexts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy bullish calls moon", "reddit", now),
+            ("quarterly results", "reddit", now)
         ]
-        let oldTexts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy bullish calls moon", "reddit", old)
+        let oldTexts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy bullish calls moon", "reddit", old),
+            ("quarterly results", "reddit", now)
         ]
 
         let recentScore = scorer.score(texts: recentTexts, referenceDate: now)
@@ -70,12 +73,14 @@ final class PipelineTests: XCTestCase {
         let scorer = SentimentScorer()
         let now    = Date()
 
-        // Same bullish text, news source vs reddit
-        let newsTexts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy upgrade", "news", now)
+        // Same bullish text, news source vs reddit — anchor with neutral to reveal tier weighting
+        let newsTexts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy upgrade", "news", now),
+            ("quarterly results", "reddit", now)
         ]
-        let redditTexts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy upgrade", "reddit", now)
+        let redditTexts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy upgrade", "reddit", now),
+            ("quarterly results", "news", now)
         ]
 
         let newsScore   = scorer.score(texts: newsTexts,   referenceDate: now)
@@ -91,7 +96,7 @@ final class PipelineTests: XCTestCase {
             ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall,  compositeScore: 0.8),
             ScoredCandidate(features: makeFeatures("TSLA"), strategyType: .longPut,   compositeScore: 0.7),
             ScoredCandidate(features: makeFeatures("NVDA"), strategyType: .shortCall, compositeScore: 0.6),
-            ScoredCandidate(features: makeFeatures("META"), strategyType: .sellPut,   compositeScore: 0.5)
+            ScoredCandidate(features: makeFeatures("JPM"),  strategyType: .sellPut,   compositeScore: 0.5)
         ]
         let review = advisor.review(candidates)
         XCTAssertEqual(review.finalCandidates.count, 4)
@@ -145,13 +150,13 @@ final class PipelineTests: XCTestCase {
 
         let pool: [CandidateFeatures] = [
             // Good bullish candidate
-            makeFeatures("AAPL",  oi: 3000, vol: 600, spread: 0.05, sentiment: 0.6, cpr: 0.7, rsi: 55),
+            makeFeatures("AAPL", oi: 3000, vol: 600, spread: 0.05, sentiment: 0.6, cpr: 0.7, rsi: 55),
             // Low OI — should be rejected
-            makeFeatures("JUNK",  oi: 100,  vol: 200, spread: 0.05, sentiment: 0.5, cpr: 0.6, rsi: 55),
+            makeFeatures("JUNK", oi: 100, vol: 200, spread: 0.05, sentiment: 0.5, cpr: 0.6, rsi: 55),
             // Good bearish candidate
-            makeFeatures("TSLA",  oi: 2500, vol: 400, spread: 0.06, sentiment: -0.5, cpr: 0.3, rsi: 48),
+            makeFeatures("TSLA", oi: 2500, vol: 400, spread: 0.06, sentiment: -0.5, cpr: 0.3, rsi: 48),
             // Good overbought candidate
-            makeFeatures("NVDA",  oi: 4000, vol: 700, spread: 0.04, sentiment: 0.2, cpr: 0.5, rsi: 75)
+            makeFeatures("NVDA", oi: 4000, vol: 700, spread: 0.04, sentiment: 0.2, cpr: 0.5, rsi: 75)
         ]
 
         let filtered  = compliance.filter(pool)

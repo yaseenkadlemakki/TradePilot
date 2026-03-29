@@ -55,15 +55,15 @@ final class FullPipelineIntegrationTest: XCTestCase {
             makeFeatures("AAPL", sentiment: 0.7, cpr: 0.75, rsi: 58),
             makeFeatures("MSFT", sentiment: 0.6, cpr: 0.70, rsi: 54),
             // Finance — bearish
-            makeFeatures("JPM",  sentiment: -0.5, cpr: 0.30, rsi: 68),
-            makeFeatures("BAC",  sentiment: -0.4, cpr: 0.35, rsi: 65),
+            makeFeatures("JPM", sentiment: -0.5, cpr: 0.30, rsi: 68),
+            makeFeatures("BAC", sentiment: -0.4, cpr: 0.35, rsi: 65),
             // Consumer — mixed
             makeFeatures("AMZN", sentiment: 0.4, cpr: 0.60, rsi: 50),
             makeFeatures("TSLA", sentiment: -0.3, cpr: 0.40, rsi: 72),
             // Energy — bullish
-            makeFeatures("XOM",  sentiment: 0.5, cpr: 0.65, rsi: 55),
+            makeFeatures("XOM", sentiment: 0.5, cpr: 0.65, rsi: 55),
             // Healthcare — low OI (should be rejected by compliance)
-            makeFeatures("JNJ",  sentiment: 0.2, cpr: 0.55, rsi: 52, oi: 80, vol: 50)
+            makeFeatures("JNJ", sentiment: 0.2, cpr: 0.55, rsi: 52, oi: 80, vol: 50)
         ]
 
         // Step 1: Compliance filter
@@ -96,9 +96,9 @@ final class FullPipelineIntegrationTest: XCTestCase {
 
         // Step 6: Sentiment scoring smoke test
         _ = scorer.score(texts: [])     // must not crash on empty input
-        let sampleTexts: [(text: String, source: String, publishedAt: Date)] = [
-            ("Strong buy bullish calls moon", "news",   Date()),
-            ("Bear market sell dump",          "reddit", Date())
+        let sampleTexts: [(text: String, source: String, publishedAt: Date)] = [ // swiftlint:disable:this large_tuple
+            ("Strong buy bullish calls moon", "news", Date()),
+            ("Bear market sell dump", "reddit", Date())
         ]
         let sentimentScore = scorer.score(texts: sampleTexts)
         XCTAssertGreaterThanOrEqual(sentimentScore, -1)
@@ -116,9 +116,9 @@ final class FullPipelineIntegrationTest: XCTestCase {
         let pool: [CandidateFeatures] = [
             makeFeatures("AAPL", oi: 3000),
             makeFeatures("TSLA", sentiment: -0.5, cpr: 0.3, oi: 2500),
-            makeFeatures("JPM",  oi: 4000),
-            makeFeatures("JUNK", oi: 50),   // rejected
-            makeFeatures("JUNK2", oi: 20),  // rejected
+            makeFeatures("JPM", oi: 4000),
+            makeFeatures("JUNK", oi: 50),
+            makeFeatures("JUNK2", oi: 20)
         ]
 
         let compliant = compliance.filter(pool)
@@ -144,7 +144,7 @@ final class FullPipelineIntegrationTest: XCTestCase {
             makeFeatures("MSFT", oi: 3500),
             makeFeatures("NVDA", oi: 3200),
             makeFeatures("GOOG", oi: 3000),
-            makeFeatures("META", oi: 2800),
+            makeFeatures("META", oi: 2800)
         ]
 
         let compliant = compliance.filter(pool)
@@ -161,10 +161,10 @@ final class FullPipelineIntegrationTest: XCTestCase {
     func testAdvisorReviewIsCoherentForBalancedPortfolio() {
         let advisor = ExpertAdvisor()
         let candidates = [
-            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall,  compositeScore: 0.8),
-            ScoredCandidate(features: makeFeatures("JPM"),  strategyType: .longPut,   compositeScore: 0.7),
-            ScoredCandidate(features: makeFeatures("XOM"),  strategyType: .sellPut,   compositeScore: 0.6),
-            ScoredCandidate(features: makeFeatures("TSLA"), strategyType: .shortCall, compositeScore: 0.5),
+            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall, compositeScore: 0.8),
+            ScoredCandidate(features: makeFeatures("JPM"), strategyType: .longPut, compositeScore: 0.7),
+            ScoredCandidate(features: makeFeatures("XOM"), strategyType: .sellPut, compositeScore: 0.6),
+            ScoredCandidate(features: makeFeatures("TSLA"), strategyType: .shortCall, compositeScore: 0.5)
         ]
         let review = advisor.review(candidates)
         XCTAssertTrue(review.isCoherent, "Balanced portfolio should be coherent")

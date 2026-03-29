@@ -58,7 +58,10 @@ actor APIClient {
             Task { await self?.setConnected(path.status == .satisfied) }
         }
         monitor.start(queue: DispatchQueue(label: "com.tradepilot.network-monitor"))
-        isConnected = monitor.currentPath.status == .satisfied
+        // For custom sessions (e.g. unit tests), assume connected; only use NWPathMonitor for the shared session.
+        isConnected = session === URLSession.shared
+            ? monitor.currentPath.status == .satisfied
+            : true
     }
 
     /// Retained for callers that need to trigger a manual connectivity refresh.

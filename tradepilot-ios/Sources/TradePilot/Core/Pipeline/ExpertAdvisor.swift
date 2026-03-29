@@ -60,7 +60,9 @@ struct ExpertAdvisor {
             if let existing = seen[ticker] {
                 // Contradictory = one bullish, one bearish on same ticker
                 if isContradictory(existing, candidate.strategyType) {
-                    let msg = "Contradictory trades on \(ticker): \(existing.displayName) vs \(candidate.strategyType.displayName). Keeping higher-scored."
+                    let existingName = existing.displayName
+                    let newName = candidate.strategyType.displayName
+                    let msg = "Contradictory trades on \(ticker): \(existingName) vs \(newName). Keeping higher-scored."
                     warnings.append(msg)
                     // Keep whichever scored higher (already sorted descending)
                     continue

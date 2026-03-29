@@ -62,6 +62,10 @@ private struct AggregatesResponse: Codable {
     let status: String
 }
 
+private struct RSIValue: Codable { let value: Double }
+private struct RSIResult: Codable { let values: [RSIValue] }
+private struct RSIResponse: Codable { let results: RSIResult? }
+
 // MARK: - Service
 
 /// Fetches OHLCV, options chains, and technical indicators from Polygon.io.
@@ -112,13 +116,6 @@ actor PolygonService {
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let headers = ["Authorization": "Bearer \(apiKey)"]
 
-        struct RSIResponse: Codable {
-            struct RSIValue: Codable { let value: Double }
-            struct RSIResult: Codable {
-                let values: [RSIValue]
-            }
-            let results: RSIResult?
-        }
         let response: RSIResponse = try await client.fetch(url: url, headers: headers)
         guard let value = response.results?.values.first?.value else {
             throw APIError.serverError(statusCode: 404)

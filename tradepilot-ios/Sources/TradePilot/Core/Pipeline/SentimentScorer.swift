@@ -25,12 +25,12 @@ struct SentimentScorer {
         "negative": 0.7, "decline": 0.8, "downgrade": 1.5, "miss": 1.2, "warning": 0.9
     ]
 
+    // swiftlint:disable large_tuple
     /// Score a list of text items, returning a normalised score in [-1, +1].
     ///
     /// - Parameters:
     ///   - texts: Array of (text, source, publishedAt) tuples.
     ///   - referenceDate: The "now" anchor for decay calculation.
-    // swiftlint:disable:next large_tuple
     func score(
         texts: [(text: String, source: String, publishedAt: Date)],
         referenceDate: Date = Date()
@@ -55,6 +55,7 @@ struct SentimentScorer {
         let raw = weightedSum / totalWeight
         return max(-1.0, min(1.0, raw))
     }
+    // swiftlint:enable large_tuple
 
     // MARK: Private
 

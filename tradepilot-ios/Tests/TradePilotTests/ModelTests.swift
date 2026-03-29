@@ -24,10 +24,10 @@ final class ModelTests: XCTestCase {
     }
 
     func testStrategyTypeRawValues() {
-        XCTAssertEqual(StrategyType.longCall.rawValue,  "LONG_CALL")
-        XCTAssertEqual(StrategyType.longPut.rawValue,   "LONG_PUT")
+        XCTAssertEqual(StrategyType.longCall.rawValue, "LONG_CALL")
+        XCTAssertEqual(StrategyType.longPut.rawValue, "LONG_PUT")
         XCTAssertEqual(StrategyType.shortCall.rawValue, "SHORT_CALL")
-        XCTAssertEqual(StrategyType.sellPut.rawValue,   "SELL_PUT")
+        XCTAssertEqual(StrategyType.sellPut.rawValue, "SELL_PUT")
     }
 
     func testStrategyTypeDebitFlag() {
@@ -43,15 +43,15 @@ final class ModelTests: XCTestCase {
         let features = makeSampleFeatures()
         let data     = try encoder.encode(features)
         let decoded  = try decoder.decode(CandidateFeatures.self, from: data)
-        XCTAssertEqual(decoded.ticker,         features.ticker)
+        XCTAssertEqual(decoded.ticker, features.ticker)
         XCTAssertEqual(decoded.sentimentScore, features.sentimentScore, accuracy: 1e-9)
-        XCTAssertEqual(decoded.openInterest,   features.openInterest,   accuracy: 1e-9)
+        XCTAssertEqual(decoded.openInterest, features.openInterest, accuracy: 1e-9)
     }
 
     func testCandidateFeaturesCodingKeys() throws {
         let features = makeSampleFeatures()
         let data     = try encoder.encode(features)
-        let json     = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json     = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertNotNil(json["sentiment_score"])
         XCTAssertNotNil(json["mention_volume"])
         XCTAssertNotNil(json["open_interest"])
@@ -82,7 +82,7 @@ final class ModelTests: XCTestCase {
         let report  = makeSentimentReport()
         let data    = try encoder.encode(report)
         let decoded = try decoder.decode(SentimentReport.self, from: data)
-        XCTAssertEqual(decoded.ticker,       report.ticker)
+        XCTAssertEqual(decoded.ticker, report.ticker)
         XCTAssertEqual(decoded.overallScore, report.overallScore, accuracy: 1e-9)
     }
 
@@ -107,7 +107,7 @@ final class ModelTests: XCTestCase {
         let proposal = makeSampleProposal()
         let data     = try encoder.encode(proposal)
         let decoded  = try decoder.decode(TradeProposal.self, from: data)
-        XCTAssertEqual(decoded.id,     proposal.id)
+        XCTAssertEqual(decoded.id, proposal.id)
         XCTAssertEqual(decoded.ticker, proposal.ticker)
     }
 
@@ -117,7 +117,7 @@ final class ModelTests: XCTestCase {
         let rec     = makeSampleRecommendation()
         let data    = try encoder.encode(rec)
         let decoded = try decoder.decode(Recommendation.self, from: data)
-        XCTAssertEqual(decoded.id,     rec.id)
+        XCTAssertEqual(decoded.id, rec.id)
         XCTAssertEqual(decoded.ticker, rec.ticker)
         XCTAssertEqual(decoded.strategyType, rec.strategyType)
     }
@@ -125,7 +125,7 @@ final class ModelTests: XCTestCase {
     func testRecommendationCodingKeys() throws {
         let rec  = makeSampleRecommendation()
         let data = try encoder.encode(rec)
-        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertNotNil(json["generated_at"])
         XCTAssertNotNil(json["company_name"])
         XCTAssertNotNil(json["strategy_type"])
