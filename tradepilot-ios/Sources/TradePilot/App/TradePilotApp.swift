@@ -17,15 +17,8 @@ struct TradePilotApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppCoordinator()
                 .modelContainer(modelContainer)
         }
-    }
-}
-
-struct ContentView: View {
-    var body: some View {
-        Text("TradePilot")
-            .padding()
     }
 }
