@@ -42,7 +42,7 @@ final class KeychainTests: XCTestCase {
     // MARK: - Overwrite (update)
 
     func testOverwriteExistingKey() throws {
-        try keychain.save(key: "first",  service: testService)
+        try keychain.save(key: "first", service: testService)
         try keychain.save(key: "second", service: testService)
         XCTAssertEqual(keychain.load(service: testService), "second")
     }
@@ -57,7 +57,7 @@ final class KeychainTests: XCTestCase {
         try keychain.save(key: "key2", service: service2)
 
         XCTAssertEqual(keychain.load(service: testService), "key1")
-        XCTAssertEqual(keychain.load(service: service2),    "key2")
+        XCTAssertEqual(keychain.load(service: service2), "key2")
     }
 
     // MARK: - Unicode / special characters

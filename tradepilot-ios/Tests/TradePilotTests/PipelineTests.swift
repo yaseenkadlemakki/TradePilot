@@ -65,7 +65,7 @@ final class PipelineTests: XCTestCase {
         ]
 
         let recentScore = scorer.score(texts: recentTexts, referenceDate: now)
-        let oldScore    = scorer.score(texts: oldTexts,    referenceDate: now)
+        let oldScore = scorer.score(texts: oldTexts, referenceDate: now)
         XCTAssertGreaterThan(recentScore, oldScore)
     }
 
@@ -83,7 +83,7 @@ final class PipelineTests: XCTestCase {
             ("quarterly results", "news", now)
         ]
 
-        let newsScore   = scorer.score(texts: newsTexts,   referenceDate: now)
+        let newsScore = scorer.score(texts: newsTexts, referenceDate: now)
         let redditScore = scorer.score(texts: redditTexts, referenceDate: now)
         XCTAssertGreaterThan(newsScore, redditScore)
     }
@@ -93,10 +93,10 @@ final class PipelineTests: XCTestCase {
     func testAdvisorPassesNonContradictoryPortfolio() {
         let advisor = ExpertAdvisor()
         let candidates = [
-            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall,  compositeScore: 0.8),
-            ScoredCandidate(features: makeFeatures("TSLA"), strategyType: .longPut,   compositeScore: 0.7),
+            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall, compositeScore: 0.8),
+            ScoredCandidate(features: makeFeatures("TSLA"), strategyType: .longPut, compositeScore: 0.7),
             ScoredCandidate(features: makeFeatures("NVDA"), strategyType: .shortCall, compositeScore: 0.6),
-            ScoredCandidate(features: makeFeatures("JPM"),  strategyType: .sellPut,   compositeScore: 0.5)
+            ScoredCandidate(features: makeFeatures("JPM"), strategyType: .sellPut, compositeScore: 0.5)
         ]
         let review = advisor.review(candidates)
         XCTAssertEqual(review.finalCandidates.count, 4)
@@ -108,7 +108,7 @@ final class PipelineTests: XCTestCase {
         // Both AAPL — longCall (bullish) and longPut (bearish) = contradictory
         let candidates = [
             ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall, compositeScore: 0.9),
-            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longPut,  compositeScore: 0.5)
+            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longPut, compositeScore: 0.5)
         ]
         let review = advisor.review(candidates)
         XCTAssertFalse(review.warnings.isEmpty)
@@ -120,8 +120,8 @@ final class PipelineTests: XCTestCase {
         let advisor = ExpertAdvisor()
         // 3 tech stocks — only 2 should pass
         let candidates = [
-            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall,  compositeScore: 0.9),
-            ScoredCandidate(features: makeFeatures("MSFT"), strategyType: .longPut,   compositeScore: 0.7),
+            ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall, compositeScore: 0.9),
+            ScoredCandidate(features: makeFeatures("MSFT"), strategyType: .longPut, compositeScore: 0.7),
             ScoredCandidate(features: makeFeatures("NVDA"), strategyType: .shortCall, compositeScore: 0.5)
         ]
         let review = advisor.review(candidates)
@@ -135,7 +135,7 @@ final class PipelineTests: XCTestCase {
         let advisor = ExpertAdvisor()
         let candidates = [
             ScoredCandidate(features: makeFeatures("AAPL"), strategyType: .longCall, compositeScore: 0.8),
-            ScoredCandidate(features: makeFeatures("JPM"),  strategyType: .sellPut,  compositeScore: 0.7)
+            ScoredCandidate(features: makeFeatures("JPM"), strategyType: .sellPut, compositeScore: 0.7)
         ]
         let review = advisor.review(candidates)
         XCTAssertFalse(review.warnings.isEmpty)

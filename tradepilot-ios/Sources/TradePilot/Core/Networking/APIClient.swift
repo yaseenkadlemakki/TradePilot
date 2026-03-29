@@ -84,6 +84,8 @@ actor APIClient {
                 return try decoder.decode(T.self, from: data)
             } catch APIError.unauthorized {
                 throw APIError.unauthorized           // never retry auth failures
+            } catch let decodingErr as DecodingError {
+                throw APIError.decodingError(underlying: decodingErr)
             } catch APIError.decodingError(let error) {
                 throw APIError.decodingError(underlying: error)
             } catch {
