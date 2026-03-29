@@ -115,7 +115,7 @@ final class FullPipelineIntegrationTest: XCTestCase {
         // Only 3 compliant candidates (rest have disqualifying low OI)
         let pool: [CandidateFeatures] = [
             makeFeatures("AAPL", oi: 3000),
-            makeFeatures("TSLA", oi: 2500, sentiment: -0.5, cpr: 0.3),
+            makeFeatures("TSLA", sentiment: -0.5, cpr: 0.3, oi: 2500),
             makeFeatures("JPM",  oi: 4000),
             makeFeatures("JUNK", oi: 50),   // rejected
             makeFeatures("JUNK2", oi: 20),  // rejected

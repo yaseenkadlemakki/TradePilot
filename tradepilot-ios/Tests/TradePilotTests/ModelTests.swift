@@ -87,7 +87,7 @@ final class ModelTests: XCTestCase {
     }
 
     func testSentimentReportEmptyKeywords() throws {
-        var report = makeSentimentReport()
+        let report = makeSentimentReport()
         // Rebuild with empty keywords array
         let empty = SentimentReport(
             ticker: report.ticker, overallScore: report.overallScore,
@@ -135,7 +135,7 @@ final class ModelTests: XCTestCase {
     }
 
     func testRecommendationEmptyCitations() throws {
-        var rec = makeSampleRecommendation()
+        let rec = makeSampleRecommendation()
         let empty = Recommendation(
             id: rec.id, generatedAt: rec.generatedAt, ticker: rec.ticker,
             companyName: rec.companyName, strategyType: rec.strategyType,
