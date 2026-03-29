@@ -124,7 +124,10 @@ class QuantStrategyAgent(BaseAgent[StrategyInput, StrategyOutput]):
     def _select_candidate(
         strategy: StrategyType, candidates: list[CandidateFeatures]
     ) -> CandidateFeatures:
-        """Pick the highest-scoring candidate for the given strategy type.
+        """Pick the best-fit candidate for the given strategy type.
+
+        Bearish strategies (LONG_PUT, SHORT_CALL) → lowest composite score;
+        bullish strategies (LONG_CALL, SHORT_PUT) → highest composite score.
 
         Args:
             strategy: The option strategy being evaluated.

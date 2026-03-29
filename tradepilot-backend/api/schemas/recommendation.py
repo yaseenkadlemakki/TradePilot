@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from config.constants import MarketRegime, StrategyType
 from pydantic import BaseModel, Field
@@ -40,7 +40,7 @@ class TradeProposal(BaseModel):
 class RiskWarning(BaseModel):
     """A risk warning attached to a validated trade proposal."""
 
-    level: str  # "soft" | "hard"
+    level: Literal["soft", "hard"]
     message: str
 
 
