@@ -3,9 +3,9 @@ import SwiftData
 import Observation
 
 enum RiskTolerance: String, CaseIterable, Identifiable {
-    case low    = "low"
-    case medium = "medium"
-    case high   = "high"
+    case low
+    case medium
+    case high
 
     var id: String { rawValue }
 
@@ -62,18 +62,24 @@ final class SettingsViewModel {
         defer { isSaving = false }
 
         do {
-            if polygonKey.isEmpty         { keychain.delete(service: KeychainManager.ServiceKey.polygonAPIKey) }
-            else                          { try keychain.save(key: polygonKey,        service: KeychainManager.ServiceKey.polygonAPIKey) }
-            if unusualWhalesKey.isEmpty   { keychain.delete(service: KeychainManager.ServiceKey.unusualWhalesAPIKey) }
-            else                          { try keychain.save(key: unusualWhalesKey,  service: KeychainManager.ServiceKey.unusualWhalesAPIKey) }
-            if claudeKey.isEmpty          { keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey) }
-            else                          { try keychain.save(key: claudeKey,         service: KeychainManager.ServiceKey.claudeAPIKey) }
-            if newsKey.isEmpty            { keychain.delete(service: KeychainManager.ServiceKey.newsAPIKey) }
-            else                          { try keychain.save(key: newsKey,           service: KeychainManager.ServiceKey.newsAPIKey) }
-            if redditClientID.isEmpty     { keychain.delete(service: KeychainManager.ServiceKey.redditClientID) }
-            else                          { try keychain.save(key: redditClientID,    service: KeychainManager.ServiceKey.redditClientID) }
-            if redditClientSecret.isEmpty { keychain.delete(service: KeychainManager.ServiceKey.redditClientSecret) }
-            else                          { try keychain.save(key: redditClientSecret, service: KeychainManager.ServiceKey.redditClientSecret) }
+            if polygonKey.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.polygonAPIKey)
+            } else { try keychain.save(key: polygonKey, service: KeychainManager.ServiceKey.polygonAPIKey) }
+            if unusualWhalesKey.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.unusualWhalesAPIKey)
+            } else { try keychain.save(key: unusualWhalesKey, service: KeychainManager.ServiceKey.unusualWhalesAPIKey) }
+            if claudeKey.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey)
+            } else { try keychain.save(key: claudeKey, service: KeychainManager.ServiceKey.claudeAPIKey) }
+            if newsKey.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.newsAPIKey)
+            } else { try keychain.save(key: newsKey, service: KeychainManager.ServiceKey.newsAPIKey) }
+            if redditClientID.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.redditClientID)
+            } else { try keychain.save(key: redditClientID, service: KeychainManager.ServiceKey.redditClientID) }
+            if redditClientSecret.isEmpty {
+                keychain.delete(service: KeychainManager.ServiceKey.redditClientSecret)
+            } else { try keychain.save(key: redditClientSecret, service: KeychainManager.ServiceKey.redditClientSecret) }
 
             let cache = LocalCache()
             cache.setPreference(key: UserPreference.Key.riskTolerance, value: riskTolerance.rawValue, in: context)

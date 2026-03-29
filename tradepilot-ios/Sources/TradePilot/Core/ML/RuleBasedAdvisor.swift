@@ -59,8 +59,8 @@ struct RuleBasedAdvisor: LLMProvider {
 
     private func checkContradictions(_ candidates: [(ticker: String, direction: Direction)]) -> [String] {
         var byTicker: [String: [Direction]] = [:]
-        for c in candidates {
-            byTicker[c.ticker, default: []].append(c.direction)
+        for candidate in candidates {
+            byTicker[candidate.ticker, default: []].append(candidate.direction)
         }
 
         var warnings: [String] = []
@@ -90,8 +90,8 @@ struct RuleBasedAdvisor: LLMProvider {
         var sectorCounts: [String: Int] = [:]
         var warnings: [String] = []
 
-        for c in candidates {
-            let sector = sectorMap[c.ticker] ?? "other"
+        for candidate in candidates {
+            let sector = sectorMap[candidate.ticker] ?? "other"
             let count = sectorCounts[sector, default: 0] + 1
             sectorCounts[sector] = count
             if count > 2 {

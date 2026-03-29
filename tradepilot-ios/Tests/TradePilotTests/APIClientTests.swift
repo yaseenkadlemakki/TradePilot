@@ -6,8 +6,8 @@ import XCTest
 final class MockURLProtocol: URLProtocol {
     static var handler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with request: URLRequest) -> Bool { true }
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
         guard let handler = Self.handler else {
@@ -113,8 +113,8 @@ final class APIClientTests: XCTestCase {
         do {
             let _: SampleResponse = try await client.fetch(url: makeURL())
             XCTFail("Expected APIError.rateLimited")
-        } catch APIError.rateLimited(let t) {
-            XCTAssertEqual(t, 60)
+        } catch APIError.rateLimited(let retryAfter) {
+            XCTAssertEqual(retryAfter, 60)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

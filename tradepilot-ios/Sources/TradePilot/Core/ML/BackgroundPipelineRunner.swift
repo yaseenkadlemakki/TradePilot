@@ -29,14 +29,15 @@ final class BackgroundPipelineRunner {
     ]
 
     private static let isoDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone(identifier: "America/New_York")!
-        return f
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "America/New_York")!
+        return formatter
     }()
 
     // MARK: - Registration
 
+#if os(iOS)
     /// Call from `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
     func registerBackgroundTask() {
         BGTaskScheduler.shared.register(
@@ -91,6 +92,7 @@ final class BackgroundPipelineRunner {
             task.setTaskCompleted(success: true)
         }
     }
+#endif
 
     // MARK: - Next trading day calculation
 

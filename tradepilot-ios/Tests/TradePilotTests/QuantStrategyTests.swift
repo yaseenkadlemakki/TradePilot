@@ -12,46 +12,46 @@ final class QuantStrategyTests: XCTestCase {
     // MARK: - Strategy assignment
 
     func testBullishSignalsYieldLongCall() {
-        let f = makeFeatures(sentiment: 0.6, callPutRatio: 0.7, rsi: 55, bollingerPos: 0.5)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .longCall)
+        let features = makeFeatures(sentiment: 0.6, callPutRatio: 0.7, rsi: 55, bollingerPos: 0.5)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .longCall)
     }
 
     func testBearishSignalsYieldLongPut() {
-        let f = makeFeatures(sentiment: -0.6, callPutRatio: 0.3, rsi: 50, bollingerPos: 0.4)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .longPut)
+        let features = makeFeatures(sentiment: -0.6, callPutRatio: 0.3, rsi: 50, bollingerPos: 0.4)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .longPut)
     }
 
     func testOverboughtRSIYieldsShortCall() {
-        let f = makeFeatures(sentiment: 0.1, callPutRatio: 0.5, rsi: 75, bollingerPos: 0.5)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .shortCall)
+        let features = makeFeatures(sentiment: 0.1, callPutRatio: 0.5, rsi: 75, bollingerPos: 0.5)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .shortCall)
     }
 
     func testHighBollingerYieldsShortCall() {
-        let f = makeFeatures(sentiment: 0.1, callPutRatio: 0.5, rsi: 55, bollingerPos: 0.85)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .shortCall)
+        let features = makeFeatures(sentiment: 0.1, callPutRatio: 0.5, rsi: 55, bollingerPos: 0.85)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .shortCall)
     }
 
     func testOversoldLowIVYieldsSellPut() {
-        let f = makeFeatures(sentiment: 0.0, callPutRatio: 0.5, rsi: 35, bollingerPos: 0.3, ivRank: 0.3)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .sellPut)
+        let features = makeFeatures(sentiment: 0.0, callPutRatio: 0.5, rsi: 35, bollingerPos: 0.3, ivRank: 0.3)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .sellPut)
     }
 
     func testNeutralDefaultsToLongCall() {
         // neutral sentiment ≥ 0 → default is longCall
-        let f = makeFeatures(sentiment: 0.05, callPutRatio: 0.5, rsi: 52, bollingerPos: 0.5)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .longCall)
+        let features = makeFeatures(sentiment: 0.05, callPutRatio: 0.5, rsi: 52, bollingerPos: 0.5)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .longCall)
     }
 
     func testNeutralSlightlyBearishDefaultsToLongPut() {
-        let f = makeFeatures(sentiment: -0.05, callPutRatio: 0.5, rsi: 52, bollingerPos: 0.5)
-        XCTAssertEqual(strategy.assignStrategy(to: f), .longPut)
+        let features = makeFeatures(sentiment: -0.05, callPutRatio: 0.5, rsi: 52, bollingerPos: 0.5)
+        XCTAssertEqual(strategy.assignStrategy(to: features), .longPut)
     }
 
     // MARK: - Composite score
 
     func testCompositeScoreRange() {
-        let f = makeFeatures(sentiment: 0.5, callPutRatio: 0.65, rsi: 58, bollingerPos: 0.55)
-        let score = strategy.compositeScore(for: f)
+        let features = makeFeatures(sentiment: 0.5, callPutRatio: 0.65, rsi: 58, bollingerPos: 0.55)
+        let score = strategy.compositeScore(for: features)
         XCTAssertGreaterThanOrEqual(score, 0)
         XCTAssertLessThanOrEqual(score, 1)
     }
@@ -135,10 +135,10 @@ final class QuantStrategyTests: XCTestCase {
 
     private func makeFeaturePool() -> [CandidateFeatures] {
         [
-            makeFeatures(ticker: "AAPL", sentiment: 0.5, callPutRatio: 0.7,  rsi: 57, bollingerPos: 0.55),
+            makeFeatures(ticker: "AAPL", sentiment: 0.5, callPutRatio: 0.7, rsi: 57, bollingerPos: 0.55),
             makeFeatures(ticker: "TSLA", sentiment: -0.5, callPutRatio: 0.3, rsi: 48, bollingerPos: 0.4),
-            makeFeatures(ticker: "NVDA", sentiment: 0.2, callPutRatio: 0.5,  rsi: 72, bollingerPos: 0.5),
-            makeFeatures(ticker: "META", sentiment: 0.0, callPutRatio: 0.5,  rsi: 38, bollingerPos: 0.3, ivRank: 0.3)
+            makeFeatures(ticker: "NVDA", sentiment: 0.2, callPutRatio: 0.5, rsi: 72, bollingerPos: 0.5),
+            makeFeatures(ticker: "META", sentiment: 0.0, callPutRatio: 0.5, rsi: 38, bollingerPos: 0.3, ivRank: 0.3)
         ]
     }
 }

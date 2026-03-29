@@ -69,12 +69,12 @@ struct LocalCache {
             existing.confidenceScore = recommendation.confidenceScore
         } else {
             let cached = CachedRecommendation(
-                id:              recommendation.id,
-                ticker:          recommendation.ticker,
-                strategyType:    recommendation.strategyType.rawValue,
+                id: recommendation.id,
+                ticker: recommendation.ticker,
+                strategyType: recommendation.strategyType.rawValue,
                 confidenceScore: recommendation.confidenceScore,
-                generatedAt:     recommendation.generatedAt,
-                jsonPayload:     payload
+                generatedAt: recommendation.generatedAt,
+                jsonPayload: payload
             )
             context.insert(cached)
         }

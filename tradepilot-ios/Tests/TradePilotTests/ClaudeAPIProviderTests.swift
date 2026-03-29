@@ -1,32 +1,6 @@
 import XCTest
 @testable import TradePilot
 
-// MARK: - Mock URLProtocol
-
-final class MockURLProtocol: URLProtocol {
-    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
-
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
-        guard let handler = MockURLProtocol.requestHandler else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
-        }
-        do {
-            let (response, data) = try handler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
-    }
-
-    override func stopLoading() {}
-}
-
 // MARK: - Tests
 
 final class ClaudeAPIProviderTests: XCTestCase {
@@ -47,7 +21,7 @@ final class ClaudeAPIProviderTests: XCTestCase {
 
     override func tearDown() {
         keychain.delete(service: KeychainManager.ServiceKey.claudeAPIKey)
-        MockURLProtocol.requestHandler = nil
+        MockURLProtocol.handler = nil
         super.tearDown()
     }
 
@@ -84,11 +58,16 @@ final class ClaudeAPIProviderTests: XCTestCase {
         try keychain.save(key: "sk-ant-test", service: KeychainManager.ServiceKey.claudeAPIKey)
 
         var capturedRequest: URLRequest?
-        MockURLProtocol.requestHandler = { request in
+        MockURLProtocol.handler = { request in
             capturedRequest = request
-            let responseJSON = """
-            {"content":[{"type":"text","text":"Portfolio looks good."}],"id":"test","model":"claude-sonnet-4-6","role":"assistant","stop_reason":"end_turn","type":"message","usage":{"input_tokens":10,"output_tokens":5}}
-            """.data(using: .utf8)!
+            let responseJSON = Data("""
+            {
+                "content":[{"type":"text","text":"Portfolio looks good."}],
+                "id":"test","model":"claude-sonnet-4-6","role":"assistant",
+                "stop_reason":"end_turn","type":"message",
+                "usage":{"input_tokens":10,"output_tokens":5}
+            }
+            """.utf8)
             let response = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 200,
@@ -107,9 +86,14 @@ final class ClaudeAPIProviderTests: XCTestCase {
     // MARK: - Response parsing
 
     func testParsesValidResponse() throws {
-        let json = """
-        {"content":[{"type":"text","text":"Portfolio analysis complete."}],"id":"msg_01","model":"claude-sonnet-4-6","role":"assistant","stop_reason":"end_turn","type":"message","usage":{"input_tokens":50,"output_tokens":20}}
-        """.data(using: .utf8)!
+        let json = Data("""
+        {
+            "content":[{"type":"text","text":"Portfolio analysis complete."}],
+            "id":"msg_01","model":"claude-sonnet-4-6","role":"assistant",
+            "stop_reason":"end_turn","type":"message",
+            "usage":{"input_tokens":50,"output_tokens":20}
+        }
+        """.utf8)
 
         let decoded = try JSONDecoder().decode(ClaudeResponseBody.self, from: json)
         XCTAssertEqual(decoded.content.first?.text, "Portfolio analysis complete.")
@@ -117,9 +101,17 @@ final class ClaudeAPIProviderTests: XCTestCase {
     }
 
     func testParsesMultipleContentBlocks() throws {
-        let json = """
-        {"content":[{"type":"text","text":"First block."},{"type":"text","text":"Second block."}],"id":"msg_02","model":"claude-sonnet-4-6","role":"assistant","stop_reason":"end_turn","type":"message","usage":{"input_tokens":50,"output_tokens":30}}
-        """.data(using: .utf8)!
+        let json = Data("""
+        {
+            "content":[
+                {"type":"text","text":"First block."},
+                {"type":"text","text":"Second block."}
+            ],
+            "id":"msg_02","model":"claude-sonnet-4-6","role":"assistant",
+            "stop_reason":"end_turn","type":"message",
+            "usage":{"input_tokens":50,"output_tokens":30}
+        }
+        """.utf8)
 
         let decoded = try JSONDecoder().decode(ClaudeResponseBody.self, from: json)
         XCTAssertEqual(decoded.content.count, 2)

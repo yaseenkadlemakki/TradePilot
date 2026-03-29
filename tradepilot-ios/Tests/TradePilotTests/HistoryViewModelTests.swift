@@ -35,8 +35,8 @@ final class HistoryViewModelTests: XCTestCase {
         let today     = Date()
         let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
 
-        try cache.save(makeRecommendation(date: today,     ticker: "AAPL"), in: context)
-        try cache.save(makeRecommendation(date: today,     ticker: "TSLA"), in: context)
+        try cache.save(makeRecommendation(date: today, ticker: "AAPL"), in: context)
+        try cache.save(makeRecommendation(date: today, ticker: "TSLA"), in: context)
         try cache.save(makeRecommendation(date: yesterday, ticker: "NVDA"), in: context)
 
         let vm = HistoryViewModel()
@@ -59,13 +59,13 @@ final class HistoryViewModelTests: XCTestCase {
     func testStrategyBreakdown() async throws {
         try cache.save(makeRecommendation(strategy: .longCall), in: context)
         try cache.save(makeRecommendation(strategy: .longCall), in: context)
-        try cache.save(makeRecommendation(strategy: .longPut),  in: context)
+        try cache.save(makeRecommendation(strategy: .longPut), in: context)
 
         let vm = HistoryViewModel()
         await vm.load(context: context)
 
         XCTAssertEqual(vm.metrics.strategyBreakdown[.longCall], 2)
-        XCTAssertEqual(vm.metrics.strategyBreakdown[.longPut],  1)
+        XCTAssertEqual(vm.metrics.strategyBreakdown[.longPut], 1)
     }
 
     // MARK: - Helpers

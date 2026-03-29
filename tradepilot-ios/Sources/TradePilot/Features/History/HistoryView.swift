@@ -30,7 +30,11 @@ struct HistoryView: View {
                             }
                         }
                     }
+                    #if os(iOS)
                     .listStyle(.insetGrouped)
+                    #else
+                    .listStyle(.inset)
+                    #endif
                     .navigationDestination(for: Recommendation.self) { rec in
                         TradeDetailView(recommendation: rec)
                     }

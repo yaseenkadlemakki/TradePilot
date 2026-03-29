@@ -30,13 +30,14 @@ struct TradeCardView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.secondary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var contractLabel: some View {
-        let c = recommendation.contract
-        return Text("\(c.action.rawValue) \(c.type.rawValue.uppercased()) $\(c.strike, specifier: "%.0f") • \(c.expiration)")
+        let contract = recommendation.contract
+        let strike = String(format: "%.0f", contract.strike)
+        return Text("\(contract.action.rawValue) \(contract.type.rawValue.uppercased()) $\(strike) • \(contract.expiration)")
             .font(.caption.monospacedDigit())
             .foregroundStyle(.secondary)
     }

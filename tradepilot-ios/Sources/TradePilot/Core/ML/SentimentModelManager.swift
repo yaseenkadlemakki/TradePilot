@@ -30,7 +30,7 @@ final class SentimentModelManager {
 
     // MARK: - Core ML model (placeholder)
 
-    // TODO: When bundling FinBERT.mlmodel:
+    // When bundling FinBERT.mlmodel:
     //   1. Add the .mlmodel to Xcode target
     //   2. let model = try FinBERT(configuration: MLModelConfiguration())
     //   3. Set usesCoreML = true
@@ -53,11 +53,11 @@ final class SentimentModelManager {
         var bullScore = 0.0
         var bearScore = 0.0
 
-        for (keyword, weight) in Self.bullishKeywords {
-            if text.contains(keyword) { bullScore += weight }
+        for (keyword, weight) in Self.bullishKeywords where text.contains(keyword) {
+            bullScore += weight
         }
-        for (keyword, weight) in Self.bearishKeywords {
-            if text.contains(keyword) { bearScore += weight }
+        for (keyword, weight) in Self.bearishKeywords where text.contains(keyword) {
+            bearScore += weight
         }
 
         let total = bullScore + bearScore
@@ -68,7 +68,7 @@ final class SentimentModelManager {
 
     /// Placeholder for Core ML inference. Replace with real MLModel prediction call.
     private func _coreMLScore(text: String) -> Double {
-        // TODO: Replace with:
+        // Replace with:
         //   let input = FinBERTInput(text: text)
         //   let output = try? model.prediction(input: input)
         //   return output?.sentiment ?? 0

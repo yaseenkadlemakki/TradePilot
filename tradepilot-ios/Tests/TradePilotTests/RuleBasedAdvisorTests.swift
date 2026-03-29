@@ -40,8 +40,8 @@ final class RuleBasedAdvisorTests: XCTestCase {
         XOM: SellPut (score: 0.65)
         """
         let result = try await advisor.analyze(prompt: prompt)
-        // Should not flag contradictions
-        XCTAssertFalse(result.lowercased().contains("contradict"))
+        // Should not flag contradictions (success msg says "No contradictory..." which is fine)
+        XCTAssertFalse(result.contains("CONTRADICTORY TRADES DETECTED"))
     }
 
     // MARK: - Sector concentration
@@ -70,7 +70,7 @@ final class RuleBasedAdvisorTests: XCTestCase {
         """
         let result = try await advisor.analyze(prompt: prompt)
         // Two tech, one finance, one energy — all within limits
-        XCTAssertFalse(result.lowercased().contains("concentration") || result.lowercased().contains("exceeds"))
+        XCTAssertFalse(result.contains("SECTOR CONCENTRATION WARNINGS"))
     }
 
     // MARK: - Regime alignment

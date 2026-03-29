@@ -43,13 +43,15 @@ struct SettingsView: View {
     // MARK: - Sections
 
     private var apiKeysSection: some View {
-        Section("API Keys") {
+        Section {
             SecureField("Polygon.io Key", text: $viewModel.polygonKey)
             SecureField("Unusual Whales Key", text: $viewModel.unusualWhalesKey)
             SecureField("Claude (Anthropic) Key", text: $viewModel.claudeKey)
             SecureField("News API Key", text: $viewModel.newsKey)
             SecureField("Reddit Client ID", text: $viewModel.redditClientID)
             SecureField("Reddit Client Secret", text: $viewModel.redditClientSecret)
+        } header: {
+            Text("API Keys")
         } footer: {
             Text("Keys are stored in the system Keychain and never leave your device.")
                 .font(.caption)

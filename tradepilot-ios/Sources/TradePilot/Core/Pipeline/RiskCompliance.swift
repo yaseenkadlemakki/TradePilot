@@ -59,9 +59,9 @@ struct RiskCompliance {
     // MARK: Private
 
     /// Pump heuristic: extreme sentiment AND extreme mention volume simultaneously.
-    func isPumpDetected(_ f: CandidateFeatures) -> Bool {
-        f.sentimentScore   >= Limits.pumpThresholdSentiment
-        && f.mentionVolume >= Limits.pumpThresholdMentions
+    func isPumpDetected(_ features: CandidateFeatures) -> Bool {
+        features.sentimentScore >= Limits.pumpThresholdSentiment
+            && features.mentionVolume >= Limits.pumpThresholdMentions
     }
 }
 
@@ -69,7 +69,7 @@ extension ComplianceResult: Equatable {
     static func == (lhs: ComplianceResult, rhs: ComplianceResult) -> Bool {
         switch (lhs, rhs) {
         case (.passed, .passed):             return true
-        case (.rejected(let a), .rejected(let b)): return a == b
+        case (.rejected(let lhs), .rejected(let rhs)): return lhs == rhs
         default:                             return false
         }
     }

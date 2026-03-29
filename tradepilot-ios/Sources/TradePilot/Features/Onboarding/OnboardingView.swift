@@ -40,7 +40,9 @@ struct OnboardingView: View {
                     pageView(pages[idx]).tag(idx)
                 }
             }
+            #if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never))
+            #endif
             .animation(.easeInOut, value: currentPage)
 
             bottomBar
@@ -85,14 +87,14 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
-        .background(Color(.systemBackground))
+        .background(.background)
     }
 
     private var pageIndicator: some View {
         HStack(spacing: 8) {
             ForEach(pages.indices, id: \.self) { idx in
                 Circle()
-                    .fill(idx == currentPage ? pages[currentPage].color : Color(.systemGray4))
+                    .fill(idx == currentPage ? pages[currentPage].color : Color.gray.opacity(0.3))
                     .frame(width: 8, height: 8)
                     .animation(.easeInOut, value: currentPage)
             }

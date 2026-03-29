@@ -7,7 +7,7 @@ struct ConfidenceIndicator: View {
     private var color: Color {
         switch score {
         case 0.75...: return .green
-        case 0.5..:  return .yellow
+        case 0.5...: return .yellow
         default:     return .red
         }
     }

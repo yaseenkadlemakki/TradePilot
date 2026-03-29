@@ -13,7 +13,8 @@ let package = Package(
     targets: [
         .target(
             name: "TradePilot",
-            path: "Sources/TradePilot"
+            path: "Sources/TradePilot",
+            exclude: ["App/TradePilotApp.swift"]
         ),
         .testTarget(
             name: "TradePilotTests",
