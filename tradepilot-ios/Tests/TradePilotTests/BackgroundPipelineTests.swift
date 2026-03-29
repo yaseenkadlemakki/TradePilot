@@ -19,8 +19,8 @@ final class BackgroundPipelineTests: XCTestCase {
     }
 
     func testFridayIsTradingDay() {
-        // 2026-04-03 is a Friday
-        let friday = makeETDate(year: 2026, month: 4, day: 3)!
+        // 2026-04-10 is a Friday (not a holiday)
+        let friday = makeETDate(year: 2026, month: 4, day: 10)!
         XCTAssertTrue(runner.isTradingDay(friday, calendar: etCalendar))
     }
 
