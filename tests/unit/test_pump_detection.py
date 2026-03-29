@@ -1,7 +1,6 @@
 """Unit tests for PumpDetector — 14 tests."""
 
 import pytest
-
 from models.pump_detector import PumpDetector
 
 
