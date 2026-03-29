@@ -28,9 +28,9 @@ struct SkeletonView: View {
     private var shimmerGradient: LinearGradient {
         LinearGradient(
             gradient: Gradient(colors: [
-                Color(.systemGray5),
-                Color(.systemGray4),
-                Color(.systemGray5)
+                Color.gray.opacity(0.12),
+                Color.gray.opacity(0.24),
+                Color.gray.opacity(0.12)
             ]),
             startPoint: UnitPoint(x: phase - 1, y: 0.5),
             endPoint: UnitPoint(x: phase, y: 0.5)
@@ -51,7 +51,7 @@ struct TradeCardSkeleton: View {
             SkeletonView(width: 120, height: 14)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.secondary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

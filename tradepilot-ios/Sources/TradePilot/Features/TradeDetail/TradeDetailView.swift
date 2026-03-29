@@ -21,9 +21,15 @@ struct TradeDetailView: View {
             }
             disclaimerSection
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
         .navigationTitle(recommendation.ticker)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     // MARK: - Sections
@@ -147,7 +153,7 @@ private struct SignalRow: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.systemGray5))
+                    .background(Color.gray.opacity(0.15))
                     .clipShape(Capsule())
                 Text("\(signal.strength * 100, specifier: "%.0f")%%")
                     .font(.caption.monospacedDigit())

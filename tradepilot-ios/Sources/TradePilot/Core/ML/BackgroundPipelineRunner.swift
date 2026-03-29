@@ -37,6 +37,7 @@ final class BackgroundPipelineRunner {
 
     // MARK: - Registration
 
+#if os(iOS)
     /// Call from `AppDelegate.application(_:didFinishLaunchingWithOptions:)`.
     func registerBackgroundTask() {
         BGTaskScheduler.shared.register(
@@ -91,6 +92,7 @@ final class BackgroundPipelineRunner {
             task.setTaskCompleted(success: true)
         }
     }
+#endif
 
     // MARK: - Next trading day calculation
 
