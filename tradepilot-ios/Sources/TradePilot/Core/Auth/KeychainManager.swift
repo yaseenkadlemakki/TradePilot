@@ -33,7 +33,7 @@ struct KeychainManager {
 
         // Try update first
         let updateQuery: [CFString: Any] = [
-            kSecClass:       kSecClassGenericPassword,
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account
         ]
@@ -43,11 +43,11 @@ struct KeychainManager {
         if updateStatus == errSecItemNotFound {
             // Not found — add new item
             let addQuery: [CFString: Any] = [
-                kSecClass:            kSecClassGenericPassword,
-                kSecAttrService:      service,
-                kSecAttrAccount:      account,
-                kSecValueData:        data,
-                kSecAttrAccessible:   kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: service,
+                kSecAttrAccount: account,
+                kSecValueData: data,
+                kSecAttrAccessible: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
             ]
             let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
             guard addStatus == errSecSuccess else {
@@ -61,11 +61,11 @@ struct KeychainManager {
     /// Loads the stored value for `service`, or returns `nil` if absent.
     func load(service: String) -> String? {
         let query: [CFString: Any] = [
-            kSecClass:            kSecClassGenericPassword,
-            kSecAttrService:      service,
-            kSecAttrAccount:      account,
-            kSecReturnData:       true,
-            kSecMatchLimit:       kSecMatchLimitOne
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne
         ]
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
@@ -76,7 +76,7 @@ struct KeychainManager {
     /// Deletes the stored value for `service`. Silent if not found.
     func delete(service: String) {
         let query: [CFString: Any] = [
-            kSecClass:       kSecClassGenericPassword,
+            kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account
         ]

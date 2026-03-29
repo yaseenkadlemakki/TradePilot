@@ -11,7 +11,7 @@ struct NewsArticle: Codable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case source, title, description, url
-        case publishedAt = "publishedAt"
+        case publishedAt
     }
 }
 
@@ -49,7 +49,7 @@ actor NewsService {
             URLQueryItem(name: "language", value: "en"),
             URLQueryItem(name: "pageSize", value: "\(pageSize)")
         ]
-        if let q = query { queryItems.append(URLQueryItem(name: "q", value: q)) }
+        if let query { queryItems.append(URLQueryItem(name: "q", value: query)) }
         components.queryItems = queryItems
         guard let url = components.url else { throw APIError.invalidURL }
 

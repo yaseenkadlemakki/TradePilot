@@ -125,8 +125,8 @@ actor DataAggregator {
             let text = post.title + " " + post.selftext
             let range = NSRange(text.startIndex..., in: text)
             for match in regex.matches(in: text, range: range) {
-                if let r = Range(match.range, in: text) {
-                    let word = String(text[r])
+                if let matchRange = Range(match.range, in: text) {
+                    let word = String(text[matchRange])
                     if !stopWords.contains(word) {
                         counts[word, default: 0] += 1
                     }

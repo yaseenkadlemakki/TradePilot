@@ -21,10 +21,10 @@ struct RedditPost: Codable, Hashable {
 }
 
 private struct RedditListing: Codable {
+    struct Child: Codable {
+        let data: RedditPost
+    }
     struct ListingData: Codable {
-        struct Child: Codable {
-            let data: RedditPost
-        }
         let children: [Child]
     }
     let data: ListingData
@@ -73,7 +73,7 @@ actor RedditService {
             guard let url = URL(string: urlString) else { continue }
             let headers = [
                 "Authorization": "Bearer \(token)",
-                "User-Agent":    "TradePilot/1.0 by TradePilotApp"
+                "User-Agent": "TradePilot/1.0 by TradePilotApp"
             ]
             let listing: RedditListing = try await client.fetch(url: url, headers: headers)
             posts.append(contentsOf: listing.data.children.map(\.data))
@@ -106,7 +106,7 @@ actor RedditService {
         request.setValue("Basic \(encoded)", forHTTPHeaderField: "Authorization")
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("TradePilot/1.0 by TradePilotApp", forHTTPHeaderField: "User-Agent")
-        request.httpBody = "grant_type=client_credentials".data(using: .utf8)
+        request.httpBody = Data("grant_type=client_credentials".utf8)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

@@ -45,8 +45,8 @@ struct OptionContract: Codable, Hashable {
 }
 
 enum ContractType: String, Codable, Hashable {
-    case call = "call"
-    case put  = "put"
+    case call
+    case put
 }
 
 enum ContractAction: String, Codable, Hashable {
@@ -62,8 +62,8 @@ struct Signal: Codable, Hashable {
 }
 
 enum SignalCategory: String, Codable, Hashable {
-    case sentiment   = "sentiment"
-    case technical   = "technical"
-    case flow        = "flow"
-    case fundamental = "fundamental"
+    case sentiment
+    case technical
+    case flow
+    case fundamental
 }

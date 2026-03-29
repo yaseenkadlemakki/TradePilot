@@ -15,9 +15,9 @@ enum APIError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthorized:             return "API key is missing or invalid. Check Settings to verify your keys."
-        case .rateLimited(let t):       return "Rate limited. Retry after \(t.map { "\(Int($0))s" } ?? "a moment")."
-        case .networkError(let e):      return "Network error: \(e.localizedDescription)"
-        case .decodingError(let e):     return "Decoding error: \(e.localizedDescription)"
+        case .rateLimited(let retryAfter): return "Rate limited. Retry after \(retryAfter.map { "\(Int($0))s" } ?? "a moment")."
+        case .networkError(let error):  return "Network error: \(error.localizedDescription)"
+        case .decodingError(let error): return "Decoding error: \(error.localizedDescription)"
         case .serverError(let code):    return "Server error: HTTP \(code)"
         case .invalidURL:               return "Invalid URL."
         case .offline:                  return "No internet connection. Check your network settings and try again."
@@ -81,8 +81,8 @@ actor APIClient {
                 return try decoder.decode(T.self, from: data)
             } catch APIError.unauthorized {
                 throw APIError.unauthorized           // never retry auth failures
-            } catch APIError.decodingError(let e) {
-                throw APIError.decodingError(underlying: e)
+            } catch APIError.decodingError(let error) {
+                throw APIError.decodingError(underlying: error)
             } catch {
                 lastError = error
                 if attempt < maxRetries - 1 {

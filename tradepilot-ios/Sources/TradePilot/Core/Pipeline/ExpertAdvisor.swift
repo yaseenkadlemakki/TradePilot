@@ -6,8 +6,6 @@ struct AdvisorReview {
     let isCoherent: Bool
     let warnings: [String]
     let finalCandidates: [ScoredCandidate]
-    /// LLM analysis text, populated when an LLMProvider is configured.
-    let llmAnalysis: String?
 }
 
 // MARK: - Sector mapping (simplified)
@@ -23,19 +21,12 @@ private let sectorMap: [String: String] = [
 
 // MARK: - Advisor
 
-/// Step 5 — Portfolio coherence review using the best available LLMProvider.
+/// Step 5 — Rule-based portfolio coherence review.
 struct ExpertAdvisor {
     private static let maxSameSector = 2
 
-    private let llmProvider: LLMProvider
-
-    init(llmProvider: LLMProvider = LLMProviderFactory.bestAvailable()) {
-        self.llmProvider = llmProvider
-    }
-
     /// Review a set of selected candidates for portfolio-level coherence.
-    /// Also runs LLM analysis asynchronously when a provider is available.
-    func review(_ candidates: [ScoredCandidate]) async -> AdvisorReview {
+    func review(_ candidates: [ScoredCandidate]) -> AdvisorReview {
         var warnings: [String] = []
         var filtered = candidates
 
@@ -48,31 +39,14 @@ struct ExpertAdvisor {
         // Rule 3: Flag if all 4 slots have the same direction
         checkRegimeAlignment(filtered, warnings: &warnings)
 
-        // Step 5b — LLM coherence analysis
-        let llmAnalysis = await runLLMAnalysis(candidates: filtered)
-
         return AdvisorReview(
             isCoherent: warnings.isEmpty,
             warnings: warnings,
-            finalCandidates: filtered,
-            llmAnalysis: llmAnalysis
+            finalCandidates: filtered
         )
     }
 
     // MARK: Private
-
-    private func runLLMAnalysis(candidates: [ScoredCandidate]) async -> String? {
-        guard !candidates.isEmpty else { return nil }
-        let prompt = buildPrompt(from: candidates)
-        return try? await llmProvider.analyze(prompt: prompt)
-    }
-
-    private func buildPrompt(from candidates: [ScoredCandidate]) -> String {
-        let lines = candidates.map { c in
-            "\(c.features.ticker): \(c.strategyType.rawValue) (score: \(String(format: "%.2f", c.compositeScore)))"
-        }
-        return "Review this options portfolio:\n" + lines.joined(separator: "\n")
-    }
 
     private func removeContradictions(
         _ candidates: [ScoredCandidate],
@@ -84,8 +58,11 @@ struct ExpertAdvisor {
         for candidate in candidates {
             let ticker = candidate.features.ticker
             if let existing = seen[ticker] {
+                // Contradictory = one bullish, one bearish on same ticker
                 if isContradictory(existing, candidate.strategyType) {
-                    warnings.append("Contradictory trades on \(ticker): \(existing.displayName) vs \(candidate.strategyType.displayName). Keeping higher-scored.")
+                    let msg = "Contradictory trades on \(ticker): \(existing.displayName) vs \(candidate.strategyType.displayName). Keeping higher-scored."
+                    warnings.append(msg)
+                    // Keep whichever scored higher (already sorted descending)
                     continue
                 }
             } else {
@@ -130,10 +107,10 @@ struct ExpertAdvisor {
         }
     }
 
-    private func isContradictory(_ a: StrategyType, _ b: StrategyType) -> Bool {
+    private func isContradictory(_ lhs: StrategyType, _ rhs: StrategyType) -> Bool {
         let bullish: Set<StrategyType> = [.longCall, .sellPut]
         let bearish: Set<StrategyType> = [.longPut, .shortCall]
-        return (bullish.contains(a) && bearish.contains(b))
-            || (bearish.contains(a) && bullish.contains(b))
+        return (bullish.contains(lhs) && bearish.contains(rhs))
+            || (bearish.contains(lhs) && bullish.contains(rhs))
     }
 }

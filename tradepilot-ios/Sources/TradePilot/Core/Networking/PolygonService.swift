@@ -113,8 +113,8 @@ actor PolygonService {
         let headers = ["Authorization": "Bearer \(apiKey)"]
 
         struct RSIResponse: Codable {
+            struct RSIValue: Codable { let value: Double }
             struct RSIResult: Codable {
-                struct RSIValue: Codable { let value: Double }
                 let values: [RSIValue]
             }
             let results: RSIResult?

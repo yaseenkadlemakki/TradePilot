@@ -47,7 +47,7 @@ actor UnusualWhalesService {
     func fetchFlow(ticker: String? = nil) async throws -> [UnusualWhalesFlow] {
         let apiKey = try requireKey()
         var urlString = "\(Self.baseURL)/option-trades/flow-alerts?limit=100"
-        if let t = ticker { urlString += "&ticker=\(t)" }
+        if let ticker { urlString += "&ticker=\(ticker)" }
         guard let url = URL(string: urlString) else { throw APIError.invalidURL }
         let headers = ["Authorization": "Bearer \(apiKey)"]
         let response: FlowResponse = try await client.fetch(url: url, headers: headers)
