@@ -1,7 +1,11 @@
+"""Shared constants and enumerations used across the TradePilot codebase."""
+
 from enum import Enum
 
 
 class StrategyType(str, Enum):
+    """Supported options strategy types for trade proposals."""
+
     LONG_CALL = "long_call"
     LONG_PUT = "long_put"
     SHORT_CALL = "short_call"
@@ -9,6 +13,8 @@ class StrategyType(str, Enum):
 
 
 class DataSource(str, Enum):
+    """Identifiers for external data providers ingested by the pipeline."""
+
     POLYGON = "polygon"
     UNUSUAL_WHALES = "unusual_whales"
     REDDIT = "reddit"
@@ -17,6 +23,8 @@ class DataSource(str, Enum):
 
 
 class MarketRegime(str, Enum):
+    """Broad market-regime classification used to contextualise recommendations."""
+
     BULL = "bull"
     BEAR = "bear"
     NEUTRAL = "neutral"

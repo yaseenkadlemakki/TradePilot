@@ -1,9 +1,17 @@
+"""Application settings loaded from environment variables or a .env file."""
+
 from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Pydantic-settings model for all runtime configuration values.
+
+    Values are read from environment variables first, then from a ``.env``
+    file in the working directory.  Unknown keys are silently ignored.
+    """
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Database
@@ -44,6 +52,11 @@ _settings: Settings | None = None
 
 
 def get_settings() -> Settings:
+    """Return the application-wide ``Settings`` singleton, creating it on first call.
+
+    Returns:
+        The cached ``Settings`` instance.
+    """
     global _settings
     if _settings is None:
         _settings = Settings()
