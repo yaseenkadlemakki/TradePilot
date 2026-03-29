@@ -1,17 +1,14 @@
 # TradePilot
 
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen)
+AI-powered stock options recommendation engine that produces exactly **4 daily trades** — one Long Call, one Long Put, one Short Call, and one Sell Put — through a 5-agent pipeline running entirely on your iPhone.
 
-AI-powered stock options recommendation engine that produces exactly **4 daily trades** — one Long Call, one Long Put, one Short Call, and one Short Put — by running market data, sentiment analysis, and options flow through a 5-agent pipeline.
+**No account required. No backend. No API keys needed to get started.**
 
 ---
 
 ## How It Works
 
-Five specialized agents run sequentially, each feeding its output to the next:
+Five specialized agents run sequentially on-device, each feeding its output to the next:
 
 ```
 DataAggregator → SentimentIntelligence → QuantStrategy → RiskCompliance → ExpertAdvisor
@@ -19,196 +16,158 @@ DataAggregator → SentimentIntelligence → QuantStrategy → RiskCompliance �
   50 tickers        Sentiment Report    4 Trade Proposals  Validated      4 Final Picks
 ```
 
-1. **DataAggregator** — Collects market prices, options flow, Reddit posts, and news articles from 4 ingestors. Extracts tickers, computes 15-feature vectors, and surfaces the top 50 candidates. *(timeout: 180 min)*
-2. **SentimentIntelligence** — Scores each candidate on sentiment, momentum, conviction, and source diversity using a keyword-based scorer with optional Claude LLM deep analysis for the top 25. *(timeout: 15 min)*
-3. **QuantStrategy** — Selects the best candidate per strategy type, calculates Greeks and risk/reward, and emits exactly 4 `TradeProposal` objects with composite scoring. *(timeout: 10 min)*
-4. **RiskCompliance** — Validates proposals against hard limits (volume, open interest, bid-ask spread, IV, pump detection) and flags soft warnings. Rejected slots loop back to QuantStrategy for replacement (up to 3 retries). *(timeout: 10 min)*
-5. **ExpertAdvisor** — Final coherence review: detects market regime, checks sector concentration, refines rationales, and produces the `DailyRecommendations` payload. *(timeout: 5 min)*
+1. **DataAggregator** — Collects market data, options flow, Reddit posts, and news. Extracts tickers, computes feature vectors, and surfaces the top 50 candidates.
+2. **SentimentIntelligence** — Scores each candidate on sentiment, momentum, and conviction using on-device ML (Core ML FinBERT) with optional cloud LLM for deep analysis.
+3. **QuantStrategy** — Selects the best candidate per strategy type with composite scoring and Greeks estimation.
+4. **RiskCompliance** — Validates proposals against hard limits (volume, open interest, bid-ask spread, IV, pump detection). Rejected slots loop back to QuantStrategy for replacement (up to 3 retries).
+5. **ExpertAdvisor** — Final coherence review using on-device LLM (Apple Foundation Models / Llama) or optional BYO Claude API key.
 
 ---
 
-## Features
+## Getting Started
 
-- **4 daily trade recommendations** across Long Call, Long Put, Short Call, and Short Put strategies
-- **Multi-source data ingestion** — market prices, unusual options flow, Reddit sentiment, and financial news
-- **5-agent AI pipeline** with sequential data passing and automatic retry loops
-- **Risk validation** with hard limits on volume, open interest, bid-ask spread, IV, and pump detection
-- **Claude LLM integration** for deep sentiment analysis and final coherence review
-- **REST API** with full history, performance metrics, and manual pipeline trigger
-- **Scheduled execution** via APScheduler for daily automated runs
-- **67 tests** — 56 unit + 11 integration
+### Option 1: Download from App Store
+Coming soon.
 
----
-
-## Tech Stack
-
-| Layer | Technologies |
-|---|---|
-| **Runtime** | Python 3.11+, FastAPI, Pydantic v2, uvicorn |
-| **AI / ML** | Anthropic Claude API, HuggingFace Transformers + PyTorch (FinBERT), scikit-learn, NumPy, pandas |
-| **Data Sources** | Polygon.io, Unusual Whales, Reddit API, NewsAPI |
-| **Storage** | TimescaleDB (asyncpg), MongoDB (motor), Redis (hiredis) |
-| **Streaming** | Kafka (aiokafka) |
-| **Scheduling** | APScheduler |
-| **Testing** | pytest, pytest-asyncio, pytest-cov, pytest-mock |
-
----
-
-## Installation & Setup
-
-### Prerequisites
-
-- Python 3.11+
-- API keys for your desired data sources (see [Required API Keys](#required-api-keys))
-
-### Steps
+### Option 2: Build from Source
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/yaseenkadlemakki/TradePilot.git
-cd TradePilot/tradepilot-backend
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Configure environment variables
-cp ../.env.example .env
-# Open .env and fill in your API keys
+cd TradePilot/tradepilot-ios
+swift build
+swift test
 ```
 
-### Required API Keys
+Open `tradepilot-ios/` in Xcode to run on your device.
 
-See `.env.example` for the full list. At minimum you need:
-
-| Variable | Provider | Required? |
-|---|---|---|
-| `POLYGON_API_KEY` | [Polygon.io](https://polygon.io) | Yes — market data & options chains |
-| `UNUSUAL_WHALES_API_KEY` | [Unusual Whales](https://unusualwhales.com) | Yes — options flow |
-| `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` | [Reddit API](https://www.reddit.com/prefs/apps) | Yes — Reddit sentiment |
-| `NEWS_API_KEY` | [NewsAPI](https://newsapi.org) | Yes — news articles |
-| `ANTHROPIC_API_KEY` | [Anthropic](https://console.anthropic.com) | Optional — keyword scorer works without it |
-
-Optional infrastructure (in-memory fallbacks used locally):
-
-```bash
-TIMESCALE_URL=postgresql+asyncpg://tradepilot:password@localhost:5432/tradepilot
-MONGO_URL=mongodb://localhost:27017
-REDIS_URL=redis://localhost:6379/0
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-JWT_SECRET=change-me-to-a-long-random-string
-```
+No `.env` files. No server setup. No API keys required.
 
 ---
 
-## Usage
+## BYO API Keys (All Optional)
 
-### Start the API server
+TradePilot works out of the box with **demo data and on-device ML**. Add your own keys in Settings to unlock real-time data:
 
-```bash
-cd tradepilot-backend
-python -m api.main
-```
+| Key | Provider | What It Unlocks | Free Tier? |
+|-----|----------|----------------|------------|
+| Polygon.io | [polygon.io](https://polygon.io) | Real-time market data + options chains | Yes (delayed data, 5 calls/min) |
+| Unusual Whales | [unusualwhales.com](https://unusualwhales.com) | Options flow intelligence | No (starts at $50/mo) |
+| Reddit OAuth | [reddit.com/dev](https://www.reddit.com/prefs/apps) | Live Reddit sentiment | Yes (100 req/min) |
+| NewsAPI | [newsapi.org](https://newsapi.org) | Financial news articles | Yes (100 requests/day) |
+| Claude API | [anthropic.com](https://console.anthropic.com) | Enhanced AI analysis (Expert Advisor) | Pay per token |
 
-The server starts on `http://localhost:8000`.
+**Without any keys:** Demo data + on-device models (Apple Foundation Models or rule-based fallback).
 
-### Run tests
+**With free-tier keys only:** Functional pipeline with delayed market data, Reddit sentiment, and news — no options flow.
 
-```bash
-# From the repo root
-python -m pytest tests/ -v
-```
+**With all keys:** Full real-time pipeline.
 
-### API Endpoints
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/health` | GET | Health check with version and timestamp |
-| `/health/ready` | GET | Readiness probe |
-| `/api/v1/recommendations/today` | GET | Today's 4 recommendations |
-| `/api/v1/recommendations/{date}` | GET | Recommendations by date (YYYY-MM-DD) |
-| `/api/v1/recommendations/detail/{id}` | GET | Full details for a single recommendation |
-| `/api/v1/recommendations/history` | GET | Historical recommendations (1–90 days, optional strategy filter) |
-| `/api/v1/recommendations/performance` | GET | Aggregate performance metrics |
-| `/api/v1/recommendations/trigger` | POST | Manually trigger the pipeline |
+All keys are stored securely in the iOS Keychain — never in plaintext.
 
 ---
 
-## Data Sources
+## On-Device ML
 
-| Source | Provider | Priority | What It Feeds |
-|---|---|---|---|
-| Market prices + options chains | Polygon.io | 1 (highest) | OHLCV bars, Greeks, IV, bid/ask |
-| Unusual options activity | Unusual Whales | 2 | Premium, sentiment, sweep detection |
-| News articles | NewsAPI | 2 | Headlines + full text for NLP |
-| Reddit posts | Reddit API | 3 | r/wallstreetbets, r/options, r/stocks, r/investing |
+| Component | Default (no setup) | With BYO Key |
+|-----------|-------------------|--------------|
+| Sentiment scoring | Core ML FinBERT (~50MB) | Same |
+| Expert Advisor | Apple Foundation Models / Rule-based | Claude API |
+| Deep analysis | Rule-based fallback | Claude API |
 
----
-
-## Project Structure
-
-```
-TradePilot/
-├── tradepilot-backend/
-│   ├── agents/              # 5 AI agents + DAG orchestrator with retry loops
-│   │   ├── base.py          # Generic BaseAgent[InputT, OutputT] with timeout
-│   │   ├── data_aggregator.py
-│   │   ├── sentiment_intelligence.py
-│   │   ├── quant_strategy.py
-│   │   ├── risk_compliance.py
-│   │   ├── expert_advisor.py
-│   │   └── orchestrator.py
-│   ├── api/
-│   │   ├── main.py          # FastAPI app with CORS + lifespan
-│   │   ├── routes/          # health.py, recommendations.py
-│   │   └── schemas/         # recommendation.py — all Pydantic models
-│   ├── config/
-│   │   ├── settings.py      # Pydantic Settings (env-driven)
-│   │   └── constants.py     # Enums, scoring weights, risk thresholds
-│   ├── data_pipelines/
-│   │   ├── ingestors/       # market_data, options_flow, reddit_scraper, news_feed
-│   │   └── processors/      # ticker_extractor, sentiment_scorer, feature_engineer
-│   ├── models/              # Placeholder dirs for FinBERT, pump_detector, strategy
-│   └── services/            # recommendation_service.py — business logic layer
-├── tests/
-│   ├── unit/                # 56 tests across 5 files
-│   ├── integration/         # 11 tests across 2 files
-│   └── conftest.py          # Shared fixtures (events, features, sentiment reports)
-└── .env.example
-```
+The app ships with everything it needs. No model downloads at runtime.
 
 ---
 
 ## Current Status
 
-This is a working backend with full agent orchestration, risk validation, and API serving. A few components are scaffolded for production but use development fallbacks locally:
+| Area | Status |
+|------|--------|
+| iOS app | Working — Dashboard, Detail, History, Settings, Onboarding |
+| 5-agent pipeline | Working — full on-device execution |
+| On-device ML | Working — Core ML FinBERT + Apple Foundation Models |
+| BYO key management | Working — Keychain storage, per-key enable/disable |
+| Demo data mode | Working — zero-key out-of-the-box experience |
+| Background scheduling | Working — BGTaskScheduler, 6:00 AM ET pre-market |
+| Local notifications | Working — push when recommendations are ready |
+| App Store release | Planned |
 
-| Component | Status |
-|---|---|
-| Storage | Recommendations held in-memory; production config points to TimescaleDB + MongoDB |
-| Caching | Redis configured but not yet wired in the service layer |
-| Streaming | Kafka topics defined in constants; event bus not yet active |
-| FinBERT | Model directory exists as placeholder; sentiment currently uses keyword-based scorer |
-| StockTwits | Defined as a data source enum; no ingestor implemented yet |
+---
+
+## Features
+
+- 4 daily trade recommendations: Long Call, Long Put, Short Call, Sell Put
+- Multi-source data ingestion (market, options flow, Reddit, news)
+- 5-agent AI pipeline with retry loops and risk validation
+- Pump detection algorithm for coordinated manipulation
+- On-device sentiment analysis (Core ML FinBERT)
+- Background daily pipeline via BGTaskScheduler (6:00 AM ET pre-market)
+- Local notifications when recommendations are ready
+- Full offline support via SwiftData
+- BYO API key management with Keychain storage
+- Accessibility (VoiceOver, Dynamic Type)
+
+---
+
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
+
+---
+
+## Self-Hosted Backend (Optional)
+
+For power users who want to run the Python pipeline server locally:
+
+```bash
+cd tradepilot-backend
+pip install -r requirements.txt
+python -m api.main
+```
+
+The backend runs the same 5-agent pipeline but requires API keys configured in `.env`. See `.env.example` for the full list. The iOS app does not depend on this.
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/health/ready` | GET | Readiness probe |
+| `/api/v1/recommendations/today` | GET | Today's 4 recommendations |
+| `/api/v1/recommendations/{date}` | GET | Recommendations by date |
+| `/api/v1/recommendations/history` | GET | Historical recommendations |
+| `/api/v1/recommendations/performance` | GET | Performance metrics |
+| `/api/v1/recommendations/trigger` | POST | Manually trigger pipeline |
+
+---
+
+## Testing
+
+```bash
+# iOS (Swift)
+cd tradepilot-ios && swift test
+
+# Backend (Python)
+python -m pytest tests/ -v --cov
+```
+
+iOS: 73 tests across models, pipeline, networking, and integration.
+Backend: 138 tests, 98.7% coverage.
 
 ---
 
 ## Contributing
 
-Contributions are welcome. To get started:
-
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and add tests
-4. Ensure all tests pass: `python -m pytest tests/ -v`
-5. Open a pull request with a clear description of what you changed and why
-
-Please keep pull requests focused — one feature or fix per PR.
+3. Make changes and add tests
+4. Ensure all tests pass
+5. Open a pull request
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
