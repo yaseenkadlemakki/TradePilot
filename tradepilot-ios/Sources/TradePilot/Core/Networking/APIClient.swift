@@ -61,6 +61,10 @@ actor APIClient {
         isConnected = monitor.currentPath.status == .satisfied
     }
 
+    deinit {
+        monitor.cancel()
+    }
+
     /// Retained for callers that need to trigger a manual connectivity refresh.
     func startMonitoring() {
         isConnected = monitor.currentPath.status == .satisfied

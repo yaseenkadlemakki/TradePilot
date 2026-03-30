@@ -8,9 +8,14 @@ struct AccessibilityLabelModifier: ViewModifier {
     let hint: String?
 
     func body(content: Content) -> some View {
-        content
-            .accessibilityLabel(label)
-            .accessibilityHint(hint ?? "")
+        if let hint {
+            content
+                .accessibilityLabel(label)
+                .accessibilityHint(hint)
+        } else {
+            content
+                .accessibilityLabel(label)
+        }
     }
 }
 

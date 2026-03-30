@@ -18,6 +18,7 @@ struct SkeletonView: View {
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(shimmerGradient)
             .frame(width: width, height: height)
+            .accessibilityHidden(true)
             .onAppear {
                 withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
                     phase = 1
