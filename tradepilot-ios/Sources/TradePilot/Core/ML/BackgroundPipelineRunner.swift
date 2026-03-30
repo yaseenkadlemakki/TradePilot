@@ -28,7 +28,10 @@ final class BackgroundPipelineRunner: Sendable {
             forTaskWithIdentifier: taskIdentifier,
             using: nil
         ) { task in
-            guard let bgTask = task as? BGProcessingTask else { return }
+            guard let bgTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
             handle(task: bgTask)
         }
         #endif
