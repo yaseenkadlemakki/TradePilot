@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 // MARK: - Errors
 
@@ -9,38 +10,69 @@ enum APIError: Error, LocalizedError {
     case decodingError(underlying: Error)
     case serverError(statusCode: Int)
     case invalidURL
+    case offline
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized:             return "API key is missing or invalid."
-        case .rateLimited(let t):       return "Rate limited. Retry after \(t.map { "\($0)s" } ?? "unknown")."
+        case .unauthorized:             return "API key is missing or invalid. Check Settings to verify your keys."
+        case .rateLimited(let t):       return "Rate limited. Retry after \(t.map { "\(Int($0))s" } ?? "a moment")."
         case .networkError(let e):      return "Network error: \(e.localizedDescription)"
         case .decodingError(let e):     return "Decoding error: \(e.localizedDescription)"
         case .serverError(let code):    return "Server error: HTTP \(code)"
         case .invalidURL:               return "Invalid URL."
+        case .offline:                  return "No internet connection. Check your network settings and try again."
+        }
+    }
+
+    /// Whether the error is recoverable by the user without developer action.
+    var isUserRecoverable: Bool {
+        switch self {
+        case .offline, .rateLimited: return true
+        case .unauthorized:          return true   // user can fix key in Settings
+        default:                     return false
         }
     }
 }
 
 // MARK: - Client
 
-/// Generic HTTP client backed by URLSession with retry and exponential back-off.
+/// Generic HTTP client backed by URLSession with retry, exponential back-off, and offline detection.
 actor APIClient {
     private let session: URLSession
     private let maxRetries: Int
     private let decoder: JSONDecoder
+    private let monitor: NWPathMonitor
+    private var isConnected: Bool = true
 
     init(session: URLSession = .shared, maxRetries: Int = 3) {
-        self.session   = session
+        self.session    = session
         self.maxRetries = maxRetries
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
+
+        monitor = NWPathMonitor()
+        // Attach handler before starting so no updates are missed.
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { await self?.setConnected(path.status == .satisfied) }
+        }
+        monitor.start(queue: DispatchQueue(label: "com.tradepilot.network-monitor"))
+        isConnected = monitor.currentPath.status == .satisfied
+    }
+
+    /// Retained for callers that need to trigger a manual connectivity refresh.
+    func startMonitoring() {
+        isConnected = monitor.currentPath.status == .satisfied
+    }
+
+    private func setConnected(_ value: Bool) {
+        isConnected = value
     }
 
     /// Fetch and decode a `Decodable` value from `url`.
     func fetch<T: Decodable>(url: URL, headers: [String: String] = [:]) async throws -> T {
+        guard isConnected else { throw APIError.offline }
         var lastError: Error = APIError.networkError(underlying: URLError(.unknown))
 
         for attempt in 0..<maxRetries {
