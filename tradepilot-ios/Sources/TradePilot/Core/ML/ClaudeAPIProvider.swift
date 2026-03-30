@@ -18,6 +18,13 @@ struct ClaudeAPIProvider: LLMProvider {
     Be concise and actionable. Flag contradictions and over-concentration.
     """
 
+    /// Injectable URLSession for testability (fix #30).
+    private let session: URLSession
+
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+
     var isAvailable: Bool {
         KeychainManager().read(service: "claude_api_key") != nil
     }
@@ -64,7 +71,7 @@ struct ClaudeAPIProvider: LLMProvider {
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         if let httpResp = response as? HTTPURLResponse, httpResp.statusCode != 200 {
             let code = httpResp.statusCode

@@ -49,12 +49,13 @@ final class LlamaProvider: LLMProvider, @unchecked Sendable {
 
     private let engine: LlamaEngine
     private var isModelLoaded = false
-    private let loadLock = NSLock()
+    /// Serializes all model access: load, inference, and unload (fix #25, #27).
+    private let modelLock = NSLock()
 
     /// Path to the GGUF model file in the app's Documents directory.
     let modelPath: URL = {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return docs.appendingPathComponent("llama-3.2-3b-instruct-q4_k_m.gguf")
+        return docs.appendingPathComponent(ModelDownloadManager.fileName)
     }()
 
     var isAvailable: Bool {
@@ -68,16 +69,15 @@ final class LlamaProvider: LLMProvider, @unchecked Sendable {
     func analyze(prompt: String) async throws -> String {
         guard isAvailable else { throw LLMProviderError.modelNotLoaded }
 
-        try await Task.detached(priority: .userInitiated) { [self] in
-            loadLock.lock()
-            defer { loadLock.unlock() }
+        // Serialize load + inference under one lock so concurrent calls cannot
+        // interleave load/infer/unload operations (fix #25).
+        return try await Task.detached(priority: .userInitiated) { [self] in
+            modelLock.lock()
+            defer { modelLock.unlock() }
             if !isModelLoaded {
                 try engine.loadModel(at: modelPath)
                 isModelLoaded = true
             }
-        }.value
-
-        return try await Task.detached(priority: .userInitiated) { [self] in
             do {
                 return try engine.infer(prompt: prompt)
             } catch {
@@ -87,6 +87,9 @@ final class LlamaProvider: LLMProvider, @unchecked Sendable {
     }
 
     deinit {
+        // Lock prevents unloadModel() racing with an in-flight analyze() (fix #27).
+        modelLock.lock()
+        defer { modelLock.unlock() }
         if isModelLoaded {
             engine.unloadModel()
         }

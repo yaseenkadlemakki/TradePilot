@@ -5,17 +5,15 @@ import Foundation
 /// When iOS 26 ships:
 /// 1. Import `FoundationModels`
 /// 2. Fill in `analyze(prompt:)` with the real session call.
-/// 3. The rest of the provider chain requires no changes.
+/// 3. Set `isAvailable` back to the `#available(iOS 26, *)` check.
+/// 4. The rest of the provider chain requires no changes.
 struct AppleFoundationProvider: LLMProvider {
 
     let name = "Apple Foundation Models (iOS 26+)"
 
-    var isAvailable: Bool {
-        if #available(iOS 26, *) {
-            return true
-        }
-        return false
-    }
+    // Disabled until the Foundation Models framework is wired in (fix #26).
+    // TODO: Enable when Foundation Models framework is wired
+    var isAvailable: Bool { false }
 
     func analyze(prompt: String) async throws -> String {
         if #available(iOS 26, *) {

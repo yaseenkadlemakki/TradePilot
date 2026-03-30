@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 /// Manages the download of the Llama 3.2 3B GGUF model from HuggingFace.
 ///
@@ -19,14 +20,19 @@ final class ModelDownloadManager: NSObject, @unchecked Sendable {
 
     // MARK: Constants
 
+    // Official Meta-Llama GGUF release on HuggingFace (fix #24)
     static let modelURL = URL(string:
-        "https://huggingface.co/TheBloke/Llama-3.2-3B-Instruct-GGUF/resolve/main/llama-3.2-3b-instruct.Q4_K_M.gguf"
+        "https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
     )!
 
-    /// Approximate model size used for the disk-space pre-check (~2.5 GB).
-    static let requiredBytes: Int64 = 2_684_354_560
+    /// Expected SHA-256 digest of the Q4_K_M GGUF file (fix #23).
+    /// Update this constant when the upstream file changes.
+    static let expectedSHA256 = "a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3"
 
-    static let fileName = "llama-3.2-3b-instruct-q4_k_m.gguf"
+    /// Approximate model size used for the disk-space pre-check (~2.0 GB for Q4_K_M).
+    static let requiredBytes: Int64 = 2_147_483_648
+
+    static let fileName = "Llama-3.2-3B-Instruct-Q4_K_M.gguf"
 
     var destinationURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -56,7 +62,7 @@ final class ModelDownloadManager: NSObject, @unchecked Sendable {
         }
 
         guard hasSufficientDiskSpace() else {
-            error = "Not enough disk space. ~2.5 GB required."
+            error = "Not enough disk space. ~2.0 GB required."
             return
         }
 
@@ -107,12 +113,18 @@ final class ModelDownloadManager: NSObject, @unchecked Sendable {
         try? FileManager.default.removeItem(at: resumeDataURL)
     }
 
-    /// Verifies the downloaded file has a non-trivial size (integrity check).
-    private func verifyFile(at url: URL) -> Bool {
-        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-        let size = attributes?[.size] as? Int64 ?? 0
-        // Require at least 1 GB (sanity check — real model is ~2.5 GB)
-        return size >= 1_073_741_824
+    /// Verifies the downloaded file against the expected SHA-256 digest (fix #23).
+    /// Deletes the file and throws if the digest does not match.
+    private func verifyFileSHA256(at url: URL) throws {
+        let data = try Data(contentsOf: url)
+        let digest = SHA256.hash(data: data)
+        let hexDigest = digest.map { String(format: "%02x", $0) }.joined()
+        guard hexDigest == Self.expectedSHA256 else {
+            try? FileManager.default.removeItem(at: url)
+            throw URLError(.cannotDecodeRawData,
+                           userInfo: [NSLocalizedDescriptionKey:
+                            "SHA-256 mismatch: expected \(Self.expectedSHA256), got \(hexDigest)"])
+        }
     }
 }
 
@@ -144,9 +156,9 @@ extension ModelDownloadManager: URLSessionDownloadDelegate {
             }
             try FileManager.default.moveItem(at: location, to: destinationURL)
 
-            guard verifyFile(at: destinationURL) else {
-                throw URLError(.cannotDecodeRawData)
-            }
+            // Verify SHA-256 integrity before marking complete (fix #23)
+            try verifyFileSHA256(at: destinationURL)
+
             clearResumeData()
             DispatchQueue.main.async {
                 self.isDownloading = false

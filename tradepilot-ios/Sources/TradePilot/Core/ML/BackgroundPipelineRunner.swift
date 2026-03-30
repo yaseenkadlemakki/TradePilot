@@ -62,6 +62,17 @@ final class BackgroundPipelineRunner: Sendable {
         // Re-schedule immediately so the chain continues tomorrow.
         scheduleNext()
 
+        // Guard against setTaskCompleted() being called more than once (fix #28).
+        let completionLock = NSLock()
+        var taskCompleted = false
+        func completeTask(success: Bool) {
+            completionLock.lock()
+            defer { completionLock.unlock() }
+            guard !taskCompleted else { return }
+            taskCompleted = true
+            task.setTaskCompleted(success: success)
+        }
+
         let pipelineTask = Task {
             do {
                 let orchestrator = PipelineOrchestrator()
@@ -69,18 +80,23 @@ final class BackgroundPipelineRunner: Sendable {
                 try LocalCache.shared.saveProposals(proposals)
                 postCompletionNotification(count: proposals.count)
             } catch {
-                // Swallow — background tasks must not crash.
+                // Log error for debugging (fix #29).
+                print("[BackgroundPipeline] Error: \(error)")
+                UserDefaults.standard.set(
+                    error.localizedDescription,
+                    forKey: "BackgroundPipelineLastError"
+                )
             }
         }
 
         task.expirationHandler = {
             pipelineTask.cancel()
-            task.setTaskCompleted(success: false)
+            completeTask(success: false)
         }
 
         Task {
             await pipelineTask.value
-            task.setTaskCompleted(success: true)
+            completeTask(success: true)
         }
     }
     #endif
