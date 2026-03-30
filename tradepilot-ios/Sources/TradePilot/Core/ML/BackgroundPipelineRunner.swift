@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 #if canImport(BackgroundTasks)
 import BackgroundTasks
 #endif
@@ -254,6 +255,3 @@ final class BackgroundPipelineRunner: Sendable {
     }
 }
 
-// MARK: - UserNotifications import
-
-import UserNotifications
