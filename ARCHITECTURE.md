@@ -19,7 +19,7 @@ DataAggregator -> SentimentIntelligence -> QuantStrategy -> RiskCompliance -> Ex
 ## LLM Provider Hierarchy
 
 1. Llama 3.2 3B (on-device, ~2GB download)
-2. Apple Foundation Models (iOS 26+)
+2. Apple Foundation Models (iOS 18+, Apple Intelligence devices)
 3. Claude API (BYO key)
 4. Rule-based fallback (always available)
 

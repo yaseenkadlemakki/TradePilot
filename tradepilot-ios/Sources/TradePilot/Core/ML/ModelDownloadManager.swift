@@ -26,8 +26,10 @@ final class ModelDownloadManager: NSObject, @unchecked Sendable {
     )!
 
     /// Expected SHA-256 digest of the Q4_K_M GGUF file (fix #23).
-    /// Update this constant when the upstream file changes.
-    static let expectedSHA256: String? = nil  // Set to actual SHA-256 after first verified download. nil skips verification.
+    /// Update this constant with the verified hash before shipping.
+    /// Obtain by running: shasum -a 256 <downloaded-gguf-file>
+    #warning("Set ModelDownloadManager.expectedSHA256 to the verified SHA-256 before shipping.")
+    static let expectedSHA256: String? = nil
 
     /// Approximate model size used for the disk-space pre-check (~2.0 GB for Q4_K_M).
     static let requiredBytes: Int64 = 2_147_483_648
@@ -116,7 +118,11 @@ final class ModelDownloadManager: NSObject, @unchecked Sendable {
     /// Verifies the downloaded file against the expected SHA-256 digest (fix #23).
     /// Deletes the file and throws if the digest does not match.
     private func verifyFileSHA256(at url: URL) throws {
-        guard let expected = Self.expectedSHA256 else { return }
+        guard let expected = Self.expectedSHA256 else {
+            throw URLError(.unsupportedURL,
+                           userInfo: [NSLocalizedDescriptionKey:
+                            "SHA-256 hash not configured. Set ModelDownloadManager.expectedSHA256 before verifying downloads."])
+        }
         let data = try Data(contentsOf: url)
         let digest = SHA256.hash(data: data)
         let hexDigest = digest.map { String(format: "%02x", $0) }.joined()

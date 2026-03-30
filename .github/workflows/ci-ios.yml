@@ -3,9 +3,9 @@ name: iOS CI
 on:
   push:
     branches: [main]
-    paths: ['tradepilot-ios/**']
+    paths: ["tradepilot-ios/**", ".github/workflows/ci-ios.yml"]
   pull_request:
-    paths: ['tradepilot-ios/**']
+    paths: ["tradepilot-ios/**", ".github/workflows/ci-ios.yml"]
 
 jobs:
   build-and-test:
@@ -14,7 +14,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.app || sudo xcode-select -s /Applications/Xcode.app
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: tradepilot-ios/.build
+          key: ${{ runner.os }}-spm-${{ hashFiles("tradepilot-ios/Package.resolved") }}
+          restore-keys: ${{ runner.os }}-spm-
       - name: Build
-        run: cd tradepilot-ios && swift build
+        timeout-minutes: 20
+        run: cd tradepilot-ios && swift build --target TradePilot
       - name: Test
-        run: cd tradepilot-ios && swift test
+        timeout-minutes: 10
+        run: cd tradepilot-ios && swift test --filter TradePilotTests
