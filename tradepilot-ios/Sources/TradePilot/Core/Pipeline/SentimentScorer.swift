@@ -2,6 +2,9 @@ import Foundation
 
 /// Step 2 — Refines raw sentiment using time-decay weighting and source tier multipliers.
 /// Matches the Python SentimentScorer formula exactly.
+///
+/// Single-text scoring is also available via `SentimentModelManager.scoreSentiment(text:)`,
+/// which delegates here and provides a clear seam for a future Core ML FinBERT swap.
 struct SentimentScorer {
     // Source tier multipliers (higher = more trusted)
     private static let tierWeights: [String: Double] = [

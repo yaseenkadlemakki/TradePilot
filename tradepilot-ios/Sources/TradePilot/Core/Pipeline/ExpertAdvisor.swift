@@ -25,6 +25,45 @@ private let sectorMap: [String: String] = [
 struct ExpertAdvisor {
     private static let maxSameSector = 2
 
+    /// Async LLM-backed review for richer, contextual analysis.
+    ///
+    /// - Parameters:
+    ///   - trades: The candidates to review (uses the same rule pipeline first).
+    ///   - provider: Any `LLMProvider` — Llama, Claude, or rule-based fallback.
+    /// - Returns: An `AdvisorReview` enriched with LLM commentary in `warnings`.
+    func reviewAsync(
+        trades: [ScoredCandidate],
+        provider: LLMProvider
+    ) async throws -> AdvisorReview {
+        // Always run the synchronous rules first.
+        var baseReview = review(trades)
+
+        // Build a human-readable prompt summarising the candidates.
+        let summary = trades.map { candidate in
+            "\(candidate.features.ticker) — \(candidate.strategyType.displayName), score: \(String(format: "%.2f", candidate.compositeScore))"
+        }.joined(separator: "\n")
+
+        let prompt = """
+        Review the following options trade proposals for portfolio coherence:
+        \(summary)
+
+        Existing rule-based warnings:
+        \(baseReview.warnings.isEmpty ? "None" : baseReview.warnings.joined(separator: "\n"))
+
+        Provide additional observations on risk concentration, macro regime fit, and any concerns not captured by the rules.
+        """
+
+        let llmAnalysis = try await provider.analyze(prompt: prompt)
+
+        // Append LLM analysis as an additional warning/note.
+        let enrichedWarnings = baseReview.warnings + ["LLM Analysis (\(provider.name)):\n\(llmAnalysis)"]
+        return AdvisorReview(
+            isCoherent: baseReview.isCoherent,
+            warnings: enrichedWarnings,
+            finalCandidates: baseReview.finalCandidates
+        )
+    }
+
     /// Review a set of selected candidates for portfolio-level coherence.
     func review(_ candidates: [ScoredCandidate]) -> AdvisorReview {
         var warnings: [String] = []
